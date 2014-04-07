@@ -18,7 +18,7 @@
 
 - Linux:
 
-on a debian based OS: apt-get install python-libpcap
+On a debian based OS: apt-get install python-libpcap
 
 - Os X and other distributions: 
 
@@ -31,14 +31,21 @@ python setup.py install
 #Usage:
  
 ./Pcredz -f file-to-parse.pcap
+
 ./Pcredz -d /tmp/pcap-directory-to-parse/
+
 ./Pcredz -i eth0
 
 Options:
+
   -h, --help          show this help message and exit
+
   -f capture.pcap     Pcap file to parse
+
   -d /home/pnt/pcap/  Pcap directory to parse recursivly
+
   -i eth0             interface for live capture
+
   -v                  More verbose.
 
 
