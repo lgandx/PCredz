@@ -23,8 +23,11 @@ On a debian based OS: apt-get install python-libpcap
 - Os X and other distributions: 
 
 wget http://downloads.sourceforge.net/project/pylibpcap/pylibpcap/0.6.4/pylibpcap-0.6.4.tar.g
+
 tar xvf pylibpcap-0.6.4.tar.gz
+
 cd pylibpcap-0.6.4
+
 python setup.py install
 
 
