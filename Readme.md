@@ -9,7 +9,7 @@
   - FTP
   - HTTP Basic
   - NTLMv1/v2 (DCE-RPC,SMBv1/2,LDAP, MSSQL, HTTP, etc)
-  - Kerberos (AS-REQ Pre-Auth etype 2) hashes.
+  - Kerberos (AS-REQ Pre-Auth etype 23) hashes.
 
 - All hashes are displayed in a hashcat format (use -m 7500 for kerberos, -m 5500 for NTLMv1, -m 5600 for NTLMv2).
 - Log all credentials to a file (CredentialDump-Session.log).
@@ -19,6 +19,8 @@
 - Linux:
 
 On a debian based OS: apt-get install python-libpcap
+
+On Kali, you will need to: apt-get remove python-pypcap && apt-get install python-libpcap
 
 - Os X and other distributions: 
 
