@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 # Pcredz 0.9
 # Created by Laurent Gaffie
 #
@@ -13,13 +14,22 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-#! /usr/bin/env python
+
 try:
     import pcap
 except ImportError:
     print 'libpcap not installed.\ntry : apt-get remove python-pypcap && apt-get install python-libpcap\nOn Mac OS X download http://downloads.sourceforge.net/project/pylibpcap/pylibpcap/0.6.4/pylibpcap-0.6.4.tar.gz?r=&ts=1396732918&use_mirror=softlayer-dal \ntar xvf pylibpcap-0.6.4.tar.gz && cd pylibpcap-0.6.4\n./setup.py install'
     exit()
-import sys,re,struct,socket,time,string,subprocess,logging,os,optparse,threading
+import logging
+import optparse
+import os
+import re
+import socket
+import struct
+import subprocess
+import sys
+import threading
+import time
 from base64 import b64decode
 from threading import Thread
 
