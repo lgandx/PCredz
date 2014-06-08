@@ -24,7 +24,7 @@ On Kali, you will need to: apt-get remove python-pypcap && apt-get install pytho
 
 - Os X and other distributions: 
 
-wget http://downloads.sourceforge.net/project/pylibpcap/pylibpcap/0.6.4/pylibpcap-0.6.4.tar.g
+wget http://downloads.sourceforge.net/project/pylibpcap/pylibpcap/0.6.4/pylibpcap-0.6.4.tar.gz
 
 tar xvf pylibpcap-0.6.4.tar.gz
 
