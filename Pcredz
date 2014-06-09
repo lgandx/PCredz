@@ -42,6 +42,7 @@ parser.add_option('-f', action="store", dest="fname", help = "Pcap file to parse
 parser.add_option('-d', action="store", dest="dir_path", help = "Pcap directory to parse recursivly", metavar="/home/pnt/pcap/")
 parser.add_option('-i', action="store", dest="interface", help = "interface for live capture", metavar="eth0")
 parser.add_option('-v', action="store_true", help="More verbose.", dest="Verbose")
+parser.add_option('-c', action="store_true", help = "Activate CC number scanning (warning: Gives many false positives!)", dest="activate_cc")
 
 options, args = parser.parse_args()
 
@@ -65,11 +66,13 @@ if options.dir_path and options.interface:
     parser.print_help()
     exit(-1)
 
+print options
 ShowWelcome()
 Verbose = options.Verbose
 fname = options.fname
 dir_path = options.dir_path
 interface = options.interface
+activate_cc = options.activate_cc
 start_time = time.time()
 
 Filename = str(os.path.join(os.path.dirname(__file__),"CredentialDump-Session.log"))
@@ -305,8 +308,12 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
     HTTPNTLM3 = re.findall('(?<=Authorization: NTLM )[^\\r]*', decoded['data'])
     NTLMSSP2 = re.findall('NTLMSSP\x00\x02\x00\x00\x00.*[^EOF]*', decoded['data'])
     NTLMSSP3 = re.findall('NTLMSSP\x00\x03\x00\x00\x00.*[^EOF]*', decoded['data'],re.DOTALL)
-    CCMatch = re.findall('.{30}[^\d][3456][0-9]{3}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[^\d]', decoded['data'],re.DOTALL)
-    CC = re.findall('[^\d][456][0-9]{3}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[^\d]', decoded['data'])
+    if activate_cc:
+        CCMatch = re.findall('.{30}[^\d][3456][0-9]{3}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[^\d]', decoded['data'],re.DOTALL)
+        CC = re.findall('[^\d][456][0-9]{3}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[^\d]', decoded['data'])
+    else:
+        CCMatch = False
+        CC = False
     if Basic64:
         basic = ''.join(Basic64)
         HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
