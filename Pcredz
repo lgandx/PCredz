@@ -319,7 +319,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
         except:
             pass
 
-    if DstPort == 88 and protocols[decoded['protocol']] == 'tcp':
+    if DstPort == 88 and protocols.has_key(decoded['protocol']) and protocols[decoded['protocol']] == 'tcp':
         Message = ParseMSKerbv5TCP(decoded['data'][20:])
         if Message:
             HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
@@ -328,7 +328,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
                 l.warning(Message[0])
                 print HeadMessage+'\n'+Message[0]
 
-    if DstPort == 88 and protocols[decoded['protocol']] == 'udp':
+    if DstPort == 88 and protocols.has_key(decoded['protocol']) and protocols[decoded['protocol']] == 'udp':
         Message = ParseMSKerbv5UDP(decoded['data'][8:])
         if Message:
             HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
