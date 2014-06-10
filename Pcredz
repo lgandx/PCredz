@@ -43,6 +43,7 @@ parser.add_option('-d', action="store", dest="dir_path", help = "Pcap directory 
 parser.add_option('-i', action="store", dest="interface", help = "interface for live capture", metavar="eth0")
 parser.add_option('-v', action="store_true", help="More verbose.", dest="Verbose")
 parser.add_option('-c', action="store_true", help = "Activate CC number scanning (warning: Gives many false positives!)", dest="activate_cc")
+parser.add_option('-t', action="store_true", help = "Include a timestamp in all generated messages (useful for correlation)", dest="timestamp")
 
 options, args = parser.parse_args()
 
@@ -73,6 +74,7 @@ fname = options.fname
 dir_path = options.dir_path
 interface = options.interface
 activate_cc = options.activate_cc
+timestamp = options.timestamp
 start_time = time.time()
 
 Filename = str(os.path.join(os.path.dirname(__file__),"CredentialDump-Session.log"))
@@ -291,11 +293,15 @@ def Decode_Ip_Packet(s):
     return d
 
 def Print_Packet_Details(decoded,SrcPort,DstPort):
+    if timestamp:
+        ts = '[%f] ' % time.time()
+    else:
+        ts = ''
     try:
-        return 'protocol: %s %s:%s > %s:%s' % (protocols[decoded['protocol']],decoded['source_address'],SrcPort,
+        return '%sprotocol: %s %s:%s > %s:%s' % (ts, protocols[decoded['protocol']],decoded['source_address'],SrcPort,
                                            decoded['destination_address'], DstPort)
     except:
-        return '%s:%s > %s:%s' % (decoded['source_address'],SrcPort,
+        return '%s%s:%s > %s:%s' % (ts,decoded['source_address'],SrcPort,
                                            decoded['destination_address'], DstPort)
 
 
@@ -521,7 +527,7 @@ def decode_file(fname,res):
             p = pcap.pcapObject()
             net, mask = pcap.lookupnet(interface)
             p.open_live(interface, 1600, 0, 100)
-            Message = 'Pcredz live capture started, using:%s'%(interface)
+            Message = "Pcredz live capture started, using:%s\nStarting timestamp (%s) corresponds to %s"%(interface, time.time(), time.strftime('%x %X'))
             print Message
             l.warning(Message)
             while 1:
