@@ -505,7 +505,10 @@ def Print_Packet_Tcpdump(pktlen, data, timestamp):
         return
     if data[12:14]=='\x08\x00':
         decoded= Decode_Ip_Packet(data[14:])
-        SrcPort= struct.unpack('>H',decoded['data'][0:2])[0]
+        if len(decoded['data']) > 0:
+            SrcPort= struct.unpack('>H',decoded['data'][0:2])[0]
+        else:
+            SrcPort = 0
         if len(decoded['data']) > 2:
             DstPort = struct.unpack('>H',decoded['data'][2:4])[0]
         else:
