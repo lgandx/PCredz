@@ -42,7 +42,7 @@ parser.add_option('-f', action="store", dest="fname", help = "Pcap file to parse
 parser.add_option('-d', action="store", dest="dir_path", help = "Pcap directory to parse recursivly", metavar="/home/pnt/pcap/")
 parser.add_option('-i', action="store", dest="interface", help = "interface for live capture", metavar="eth0")
 parser.add_option('-v', action="store_true", help="More verbose.", dest="Verbose")
-parser.add_option('-c', action="store_true", help = "Activate CC number scanning (warning: Gives many false positives!)", dest="activate_cc")
+parser.add_option('-c', action="store_false", default='True', help = "deactivate CC number scanning (Can gives false positives!)", dest="activate_cc")
 parser.add_option('-t', action="store_true", help = "Include a timestamp in all generated messages (useful for correlation)", dest="timestamp")
 
 options, args = parser.parse_args()
@@ -67,7 +67,6 @@ if options.dir_path and options.interface:
     parser.print_help()
     exit(-1)
 
-print options
 ShowWelcome()
 Verbose = options.Verbose
 fname = options.fname
@@ -80,6 +79,11 @@ start_time = time.time()
 Filename = str(os.path.join(os.path.dirname(__file__),"CredentialDump-Session.log"))
 l= logging.getLogger('Credential-Session')
 l.addHandler(logging.FileHandler(Filename,'a'))
+
+if activate_cc:
+   print 'CC number scanning activated\n'
+else:
+   print 'CC number scanning is deactivated\n'
 
 def PrintPacket(Filename,Message):
     if Verbose == True:
