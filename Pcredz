@@ -257,7 +257,11 @@ def ParseSNMP(data):
     SNMPVersion = data[4:5]
     if SNMPVersion == "\x00":
         StrLen = struct.unpack('<b',data[6:7])[0]
-        return 'Found SNMP Community string: %s\n'%(data[7:7+StrLen])
+        return 'Found SNMPv1 Community string: %s\n'%(data[7:7+StrLen])
+    if data[3:5] == "\x01\x01":
+        StrLen = struct.unpack('<b',data[6:7])[0]
+        return 'Found SNMPv2 Community string: %s\n'%(data[7:7+StrLen])
+
 
 def ParseSMTP(data):
     basic = data[0:len(data)-2]
