@@ -112,7 +112,7 @@ def IsCookedPcap(version):
         print 'Using TCPDump format\n'
         return 3
     else:
-        print 'Unknow format, trying TCPDump format\n'
+        print 'Unknown format, trying TCPDump format\n'
         return 3
 
 protocols={6:'tcp',
