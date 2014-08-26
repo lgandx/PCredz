@@ -18,7 +18,7 @@
 try:
     import pcap
 except ImportError:
-    print 'libpcap not installed.\ntry : apt-get remove python-pypcap && apt-get install python-libpcap\nOn Mac OS X download http://downloads.sourceforge.net/project/pylibpcap/pylibpcap/0.6.4/pylibpcap-0.6.4.tar.gz?r=&ts=1396732918&use_mirror=softlayer-dal \ntar xvf pylibpcap-0.6.4.tar.gz && cd pylibpcap-0.6.4\n./setup.py install'
+    print 'libpcap not installed.\ntry : apt-get remove python-pypcap && apt-get install python-libpcap\nOn Mac OS X download http://downloads.sourceforge.net/project/pylibpcap/pylibpcap/0.6.4/pylibpcap-0.6.4.tar.gz \ntar xvf pylibpcap-0.6.4.tar.gz && cd pylibpcap-0.6.4\n./setup.py install'
     exit()
 import logging
 import optparse
@@ -112,7 +112,7 @@ def IsCookedPcap(version):
         print 'Using TCPDump format\n'
         return 3
     else:
-        print 'Unknow format, trying TCPDump format\n'
+        print 'Unknown format, trying TCPDump format\n'
         return 3
 
 protocols={6:'tcp',
