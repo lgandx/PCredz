@@ -189,25 +189,15 @@ def ParseMSKerbv5TCP(Data):
                 BuildHash = "$krb5pa$23$"+Name+"$"+Domain+"$dummy$"+SwitchHash.encode('hex')
                 return 'MSKerb hash found: %s\n'%(BuildHash),"$krb5pa$23$"+Name+"$"+Domain+"$dummy$"
         if Data[44:48] == "\xa2\x36\x04\x34" or Data[44:48] == "\xa2\x35\x04\x33":
-            HashLen = struct.unpack('<b',Data[45:46])[0]
-            if HashLen == 53:
-                Hash = Data[48:99]
-                SwitchHash = Hash[16:]+Hash[0:16]
-                NameLen = struct.unpack('<b',Data[147:148])[0]
-                Name = Data[148:148+NameLen]
-                DomainLen = struct.unpack('<b',Data[148+NameLen+3:148+NameLen+4])[0]
-                Domain = Data[148+NameLen+4:148+NameLen+4+DomainLen]
-                BuildHash = "$krb5pa$23$"+Name+"$"+Domain+"$dummy$"+SwitchHash.encode('hex')
-                return 'MSKerb hash found: %s\n'%(BuildHash),"$krb5pa$23$"+Name+"$"+Domain+"$dummy$"
-            if HashLen == 54:
-                Hash = Data[53:105]
-                SwitchHash = Hash[16:]+Hash[0:16]
-                NameLen = struct.unpack('<b',Data[148:149])[0]
-                Name = Data[149:149+NameLen]
-                DomainLen = struct.unpack('<b',Data[149+NameLen+3:149+NameLen+4])[0]
-                Domain = Data[149+NameLen+4:149+NameLen+4+DomainLen]
-                BuildHash = "$krb5pa$23$"+Name+"$"+Domain+"$dummy$"+SwitchHash.encode('hex')
-                return 'MSKerb hash found: %s\n'%(BuildHash),"$krb5pa$23$"+Name+"$"+Domain+"$dummy$"
+            HashLen = struct.unpack('<b',Data[47:48])[0]
+            Hash = Data[48:48+HashLen]
+            SwitchHash = Hash[16:]+Hash[0:16]
+            NameLen = struct.unpack('<b',Data[HashLen+96:HashLen+96+1])[0]
+            Name = Data[HashLen+97:HashLen+97+NameLen]
+            DomainLen = struct.unpack('<b',Data[HashLen+97+NameLen+3:HashLen+97+NameLen+4])[0]
+            Domain = Data[HashLen+97+NameLen+4:HashLen+97+NameLen+4+DomainLen]
+            BuildHash = "$krb5pa$23$"+Name+"$"+Domain+"$dummy$"+SwitchHash.encode('hex')
+            return 'MSKerb hash found: %s\n'%(BuildHash),"$krb5pa$23$"+Name+"$"+Domain+"$dummy$"
 
         else:
             Hash = Data[48:100]
@@ -245,17 +235,21 @@ def ParseMSKerbv5UDP(Data):
                 Domain = Data[144+NameLen+4:144+NameLen+4+DomainLen]
                 BuildHash = "$krb5pa$23$"+Name+"$"+Domain+"$dummy$"+SwitchHash.encode('hex')
                 return 'MSKerb hash found: %s\n'%(BuildHash),"$krb5pa$23$"+Name+"$"+Domain+"$dummy$"
+
         else:
-            Hash = Data[49:101]
+            HashLen = struct.unpack('<b',Data[48:49])[0]
+            Hash = Data[49:49+HashLen]
             SwitchHash = Hash[16:]+Hash[0:16]
-            NameLen = struct.unpack('<b',Data[149:150])[0]
-            Name = Data[150:150+NameLen]
-            DomainLen = struct.unpack('<b',Data[150+NameLen+3:150+NameLen+4])[0]
-            Domain = Data[150+NameLen+4:150+NameLen+4+DomainLen]
+            NameLen = struct.unpack('<b',Data[HashLen+97:HashLen+97+1])[0]
+            Name = Data[HashLen+98:HashLen+98+NameLen]
+            DomainLen = struct.unpack('<b',Data[HashLen+98+NameLen+3:HashLen+98+NameLen+4])[0]
+            Domain = Data[HashLen+98+NameLen+4:HashLen+98+NameLen+4+DomainLen]
             BuildHash = "$krb5pa$23$"+Name+"$"+Domain+"$dummy$"+SwitchHash.encode('hex')
             return 'MSKerb hash found: %s\n'%(BuildHash),"$krb5pa$23$"+Name+"$"+Domain+"$dummy$"
+
     else:
         return False
+
 
 def ParseSNMP(data):
     SNMPVersion = data[4:5]
@@ -630,3 +624,4 @@ def Run():
         raise
 
 Run()
+
