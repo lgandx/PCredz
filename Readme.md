@@ -7,7 +7,7 @@
   - IMAP
   - SNMP community string
   - FTP
-  - HTTP Basic
+  - HTTP
   - NTLMv1/v2 (DCE-RPC,SMBv1/2,LDAP, MSSQL, HTTP, etc)
   - Kerberos (AS-REQ Pre-Auth etype 23) hashes.
 
