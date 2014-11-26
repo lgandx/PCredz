@@ -22,7 +22,7 @@ except ImportError:
     exit()
 import logging
 import argparse
-import string
+#import string
 import os
 import re
 import socket
@@ -305,17 +305,17 @@ def Print_Packet_Details(decoded,SrcPort,DstPort):
 
 
 def ParseDataRegex(decoded, SrcPort, DstPort):
-    HTTPUser = []
-    HTTPass = []
+    HTTPUser = None
+    HTTPass = None
     for user in http_userfields:
-        user = re.findall('(%s=[^\s]+)' % user, decoded['data'], re.IGNORECASE)
+        user = re.findall('(%s=[^&]+)' % user, decoded['data'], re.IGNORECASE)
         if user:
-            HTTPUser.append(user)
+            HTTPUser = user
 
     for password in http_passfields:
-        passw = re.findall('(%s=[^\s]+)' % password, decoded['data'], re.IGNORECASE)
+        passw = re.findall('(%s=[^&]+)' % password, decoded['data'], re.IGNORECASE)
         if passw:
-            HTTPass.append(passw)
+            HTTPass = passw
 
     SMTPAuth = re.search('AUTH LOGIN|AUTH PLAIN', decoded['data'])
     Basic64 = re.findall('(?<=Authorization: Basic )[^\n]*', decoded['data'])
@@ -399,14 +399,23 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 
     if DstPort == 80:
         if (HTTPUser and HTTPass):
-            HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
             try:
-                Message = 'Found possible HTTP authentication:'
+                host = re.findall("(Host: [^\n]+)", decoded['data'])
+                get_path = re.findall("(GET [^\n]+)", decoded['data'])
+                post_path = re.findall("(POST [^\n]+)", decoded['data'])
+                HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+                Message = 'Found possible HTTP authentication %s:%s\n' % (HTTPUser[0], HTTPass[0])
+                if host:
+                    Message += '%s\n' % host[0].strip('\r')
+                if get_path:
+                    Message += 'Full path: %s\n' % get_path[0].strip('\r')
+                if post_path:
+                    Message += 'Full path: %s\n' % post_path[0].strip('\r')
                 if PrintPacket(Filename,Message):
                     l.warning(HeadMessage)
                     l.warning(Message)
                     print HeadMessage+'\n'+Message
-                    print filter(lambda x: x in string.printable, decoded['data'])
+                    #print filter(lambda x: x in string.printable, decoded['data'])
             except:
                 pass
 
