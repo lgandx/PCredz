@@ -21,7 +21,8 @@ except ImportError:
     print 'libpcap not installed.\ntry : apt-get remove python-pypcap && apt-get install python-libpcap\nOn Mac OS X download http://downloads.sourceforge.net/project/pylibpcap/pylibpcap/0.6.4/pylibpcap-0.6.4.tar.gz \ntar xvf pylibpcap-0.6.4.tar.gz && cd pylibpcap-0.6.4\n./setup.py install'
     exit()
 import logging
-import optparse
+import argparse
+import string
 import os
 import re
 import socket
@@ -37,33 +38,19 @@ def ShowWelcome():
     Message = 'Pcredz 0.9\nAuthor: Laurent Gaffie\nPlease send bugs/comments/pcaps to: lgaffie@trustwave.com\nThis script will extract NTLM (http,ldap,smb,sql,etc), Kerberos,\nFTP, HTTP Basic and credit card data from a given pcap file or from a live interface.\n'
     print Message
 
-parser = optparse.OptionParser(usage='\npython %prog -f file.pcap\n%prog -d /tmp/pcap/\n%prog -i eth0',prog=sys.argv[0],)
-parser.add_option('-f', action="store", dest="fname", help = "Pcap file to parse", metavar="capture.pcap")
-parser.add_option('-d', action="store", dest="dir_path", help = "Pcap directory to parse recursivly", metavar="/home/pnt/pcap/")
-parser.add_option('-i', action="store", dest="interface", help = "interface for live capture", metavar="eth0")
-parser.add_option('-v', action="store_true", help="More verbose.", dest="Verbose")
-parser.add_option('-c', action="store_false", default='True', help = "deactivate CC number scanning (Can gives false positives!)", dest="activate_cc")
-parser.add_option('-t', action="store_true", help = "Include a timestamp in all generated messages (useful for correlation)", dest="timestamp")
+parser = argparse.ArgumentParser(description='Pcredz 0.9\nAuthor: Laurent Gaffie')
+m_group=parser.add_mutually_exclusive_group()
+m_group.add_argument('-f', type=str, dest="fname", default=None, help="Pcap file to parse")
+m_group.add_argument('-d', type=str, dest="dir_path", default=None, help="Pcap directory to parse recursivly")
+m_group.add_argument('-i', type=str, dest="interface", default=None, help="interface for live capture")
+parser.add_argument('-c', action="store_false", dest="activate_cc", default=True, help="deactivate CC number scanning (Can gives false positives!)")
+parser.add_argument('-t', action="store_true", dest="timestamp", help="Include a timestamp in all generated messages (useful for correlation)")
+parser.add_argument('-v', action="store_true", dest="Verbose", help="More verbose.")
 
-options, args = parser.parse_args()
+options = parser.parse_args()
 
 if options.fname is None and options.dir_path is None and options.interface is None:
     print '\n\033[1m\033[31m -f or -d or -i mandatory option missing.\033[0m\n'
-    parser.print_help()
-    exit(-1)
-
-if options.fname and options.dir_path:
-    print '\n\033[1m\033[31mYou can\'t use -f and -d at the same time.\033[0m\n'
-    parser.print_help()
-    exit(-1)
-
-if options.fname and options.interface:
-    print '\n\033[1m\033[31mYou can\'t use -f and -i at the same time.\033[0m\n'
-    parser.print_help()
-    exit(-1)
-
-if options.dir_path and options.interface:
-    print '\n\033[1m\033[31mYou can\'t use -i and -d at the same time.\033[0m\n'
     parser.print_help()
     exit(-1)
 
@@ -75,6 +62,16 @@ interface = options.interface
 activate_cc = options.activate_cc
 timestamp = options.timestamp
 start_time = time.time()
+
+http_userfields = ['log','login', 'wpname', 'ahd_username', 'unickname', 'nickname', 'user', 'user_name',
+                    'alias', 'pseudo', 'email', 'username', '_username', 'userid', 'form_loginname', 'loginname',
+                    'login_id', 'loginid', 'session_key', 'sessionkey', 'pop_login', 'uid', 'id', 'user_id', 'screename',
+                    'uname', 'ulogin', 'acctname', 'account', 'member', 'mailaddress', 'membername', 'login_username',
+                    'login_email', 'loginusername', 'loginemail', 'uin', 'sign-in']
+
+http_passfields = ['ahd_password', 'pass', 'password', '_password', 'passwd', 'session_password', 'sessionpassword', 
+                   'login_password', 'loginpassword', 'form_pw', 'pw', 'userpassword', 'pwd', 'upassword', 'login_password'
+                   'passwort', 'passwrd', 'wppassword', 'upasswd']
 
 Filename = str(os.path.join(os.path.dirname(__file__),"CredentialDump-Session.log"))
 l= logging.getLogger('Credential-Session')
@@ -308,6 +305,18 @@ def Print_Packet_Details(decoded,SrcPort,DstPort):
 
 
 def ParseDataRegex(decoded, SrcPort, DstPort):
+    HTTPUser = []
+    HTTPass = []
+    for user in http_userfields:
+        user = re.findall('(%s=[^\s]+)' % user, decoded['data'], re.IGNORECASE)
+        if user:
+            HTTPUser.append(user)
+
+    for password in http_passfields:
+        passw = re.findall('(%s=[^\s]+)' % password, decoded['data'], re.IGNORECASE)
+        if passw:
+            HTTPass.append(passw)
+
     SMTPAuth = re.search('AUTH LOGIN|AUTH PLAIN', decoded['data'])
     Basic64 = re.findall('(?<=Authorization: Basic )[^\n]*', decoded['data'])
     FTPUser = re.findall('(?<=USER )[^\r]*', decoded['data'])
@@ -386,6 +395,19 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
                     l.warning(Message)
                     print HeadMessage+'\n'+Message
             except NameError:
+                pass
+
+    if DstPort == 80:
+        if (HTTPUser and HTTPass):
+            HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+            try:
+                Message = 'Found possible HTTP authentication:'
+                if PrintPacket(Filename,Message):
+                    l.warning(HeadMessage)
+                    l.warning(Message)
+                    print HeadMessage+'\n'+Message
+                    print filter(lambda x: x in string.printable, decoded['data'])
+            except:
                 pass
 
     if DstPort == 25 and SMTPAuth or DstPort == 587 and SMTPAuth:
