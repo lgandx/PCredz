@@ -270,6 +270,23 @@ def ParseSMTP(data):
         except:
             pass
 
+def ParseSqlClearTxtPwd(Pwd):
+    Pwd = map(ord,Pwd.replace('\xa5',''))
+    Pw = []
+    for x in Pwd:
+        Pw.append(hex(x ^ 0xa5)[::-1][:2].replace("x","0").decode('hex'))
+    return ''.join(Pw)
+
+def ParseMSSQLPlainText(data):
+    UsernameOffset = struct.unpack('<h',data[48:50])[0]
+    PwdOffset = struct.unpack('<h',data[52:54])[0]
+    AppOffset = struct.unpack('<h',data[56:58])[0]
+    PwdLen = AppOffset-PwdOffset
+    UsernameLen = PwdOffset-UsernameOffset
+    PwdStr = ParseSqlClearTxtPwd(data[8+PwdOffset:8+PwdOffset+PwdLen])
+    UserName = data[8+UsernameOffset:8+UsernameOffset+UsernameLen].decode('utf-16le')
+    return "MSSQL Username: %s Password: %s"%(UserName, PwdStr)
+
 def Decode_Ip_Packet(s):
     d={}
     d['version']=(ord(s[0]) & 0xf0) >> 4
@@ -323,6 +340,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
     FTPPass = re.findall('(?<=PASS )[^\r]*', decoded['data'])
     HTTPNTLM2 = re.findall('(?<=WWW-Authenticate: NTLM )[^\\r]*', decoded['data'])
     HTTPNTLM3 = re.findall('(?<=Authorization: NTLM )[^\\r]*', decoded['data'])
+    NTLMSSP1 = re.findall('NTLMSSP\x00\x01\x00\x00\x00.*[^EOF]*', decoded['data'])
     NTLMSSP2 = re.findall('NTLMSSP\x00\x02\x00\x00\x00.*[^EOF]*', decoded['data'])
     NTLMSSP3 = re.findall('NTLMSSP\x00\x03\x00\x00\x00.*[^EOF]*', decoded['data'],re.DOTALL)
     if activate_cc:
@@ -342,6 +360,14 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
                 print HeadMessage+'\n'+Message
         except:
             pass
+
+    if DstPort == 1433 and decoded['data'][20:22]=="\x10\x01" and len(NTLMSSP1) <=0:
+        HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+        Message = ParseMSSQLPlainText(decoded['data'][20:])
+        if PrintPacket(Filename,Message):
+           l.warning(HeadMessage)
+           l.warning(Message)
+           print HeadMessage+'\n'+Message
 
     if DstPort == 88 and protocols.has_key(decoded['protocol']) and protocols[decoded['protocol']] == 'tcp':
         Message = ParseMSKerbv5TCP(decoded['data'][20:])
@@ -415,7 +441,6 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
                     l.warning(HeadMessage)
                     l.warning(Message)
                     print HeadMessage+'\n'+Message
-                    #print filter(lambda x: x in string.printable, decoded['data'])
             except:
                 pass
 
@@ -655,4 +680,5 @@ def Run():
         raise
 
 Run()
+
 
