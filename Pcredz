@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Pcredz 0.9
+# Pcredz 1.0.0
 # Created by Laurent Gaffie
 #
 # This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,6 @@ except ImportError:
     exit()
 import logging
 import argparse
-#import string
 import os
 import re
 import socket
@@ -35,10 +34,10 @@ from base64 import b64decode
 from threading import Thread
 
 def ShowWelcome():
-    Message = 'Pcredz 0.9\nAuthor: Laurent Gaffie\nPlease send bugs/comments/pcaps to: lgaffie@trustwave.com\nThis script will extract NTLM (http,ldap,smb,sql,etc), Kerberos,\nFTP, HTTP Basic and credit card data from a given pcap file or from a live interface.\n'
+    Message = 'Pcredz 1.0.0\nAuthor: Laurent Gaffie\nPlease send bugs/comments/pcaps to: lgaffie@trustwave.com\nThis script will extract NTLM (http,ldap,smb,sql,etc), Kerberos,\nFTP, HTTP Basic and credit card data from a given pcap file or from a live interface.\n'
     print Message
 
-parser = argparse.ArgumentParser(description='Pcredz 0.9\nAuthor: Laurent Gaffie')
+parser = argparse.ArgumentParser(description='Pcredz 1.0.0\nAuthor: Laurent Gaffie')
 m_group=parser.add_mutually_exclusive_group()
 m_group.add_argument('-f', type=str, dest="fname", default=None, help="Pcap file to parse")
 m_group.add_argument('-d', type=str, dest="dir_path", default=None, help="Pcap directory to parse recursivly")
@@ -680,5 +679,3 @@ def Run():
         raise
 
 Run()
-
-
