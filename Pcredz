@@ -242,7 +242,18 @@ def ParseMSKerbv5UDP(Data):
             Domain = Data[HashLen+98+NameLen+4:HashLen+98+NameLen+4+DomainLen]
             BuildHash = "$krb5pa$23$"+Name+"$"+Domain+"$dummy$"+SwitchHash.encode('hex')
             return 'MSKerb hash found: %s\n'%(BuildHash),"$krb5pa$23$"+Name+"$"+Domain+"$dummy$"
-
+    
+    elif MsgType == "\x0a" and EncType == "\x12" and MessageType =="\x02":
+        if Data[44:48] == "\xa2\x3a\x04\x38":
+            HashLen = struct.unpack('<b',Data[47])[0]
+            Hash    = Data[48:48+HashLen]
+            NameLen = struct.unpack('<b',Data[152:153])[0]
+            Name = Data[153:153+NameLen]
+            DomainLen = struct.unpack('<b',Data[153+NameLen+3:153+NameLen+4])[0]
+            Domain = Data[153+NameLen+4:153+NameLen+4+DomainLen]
+            Salt = ""
+            BuildHash = "$krb5pa$18$"+Name+"$"+Domain+"$"+Salt+"$"+Hash.encode('hex')
+            return 'MSKerb hash found: %s\n'%(BuildHash),"$krb5pa$18$"+Name+"$"+Domain+"$"+Salt+"$"   
     else:
         return False
 
