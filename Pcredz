@@ -66,11 +66,11 @@ http_userfields = ['log','login', 'wpname', 'ahd_username', 'unickname', 'nickna
                     'alias', 'pseudo', 'email', 'username', '_username', 'userid', 'form_loginname', 'loginname',
                     'login_id', 'loginid', 'session_key', 'sessionkey', 'pop_login', 'uid', 'id', 'user_id', 'screename',
                     'uname', 'ulogin', 'acctname', 'account', 'member', 'mailaddress', 'membername', 'login_username',
-                    'login_email', 'loginusername', 'loginemail', 'uin', 'sign-in']
+                    'login_email', 'loginusername', 'loginemail', 'uin', 'sign-in', 'j_username']
 
 http_passfields = ['ahd_password', 'pass', 'password', '_password', 'passwd', 'session_password', 'sessionpassword', 
                    'login_password', 'loginpassword', 'form_pw', 'pw', 'userpassword', 'pwd', 'upassword', 'login_password'
-                   'passwort', 'passwrd', 'wppassword', 'upasswd']
+                   'passwort', 'passwrd', 'wppassword', 'upasswd', 'j_password']
 
 Filename = str(os.path.join(os.path.dirname(__file__),"CredentialDump-Session.log"))
 l= logging.getLogger('Credential-Session')
