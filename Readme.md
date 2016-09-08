@@ -16,14 +16,26 @@
 
 #Install:
 
-- Linux:
+###Linux:
 
-On a debian based OS: apt-get install python-libpcap
+On a debian based OS: 
+```bash
+sudo apt-get install python-pip
+sudo pip install pypcap
+```
+Test if pcap is installed
+```bash
+python -c "help('pcap');" | grep pcap     
 
-On Kali, you will need to: apt-get remove python-pypcap && apt-get install python-libpcap
+or
 
-- Os X and other distributions: 
+Simply open Python and type:
+import pcap
+```
 
+###Os X and other distributions: 
+
+```bash
 wget http://downloads.sourceforge.net/project/pylibpcap/pylibpcap/0.6.4/pylibpcap-0.6.4.tar.gz
 
 tar xvf pylibpcap-0.6.4.tar.gz
@@ -31,18 +43,21 @@ tar xvf pylibpcap-0.6.4.tar.gz
 cd pylibpcap-0.6.4
 
 python setup.py install
+```
 
 
 #Usage:
  
+```bash 
 ./Pcredz -f file-to-parse.pcap
 
 ./Pcredz -d /tmp/pcap-directory-to-parse/
 
 ./Pcredz -i eth0
+```
 
-Options:
-
+#Options:
+```bash
   -h, --help          show this help message and exit
 
   -f capture.pcap     Pcap file to parse
@@ -52,6 +67,6 @@ Options:
   -i eth0             interface for live capture
 
   -v                  More verbose.
-
+```
 
 
