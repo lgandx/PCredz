@@ -487,7 +487,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 
     if SrcPort == 445:
         SMBRead_userfields = ['Administrator','user', 'email', 'username', 'session_key', 'sessionkey']
-        SMBRead_passfields = ['cpassword','password', 'pass', 'password', '_password', 'passwd']
+        SMBRead_passfields = ['cpassword','password', 'pass', 'password', '_password', 'passwd', 'pwd']
         for password in SMBRead_passfields:
             passw = re.findall('(?<=%s )[^\\r]*'%(password), decoded['data'], re.IGNORECASE)
             if passw:
