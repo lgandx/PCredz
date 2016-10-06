@@ -71,13 +71,6 @@ http_userfields = ['log','login', 'wpname', 'ahd_username', 'unickname', 'nickna
 http_passfields = ['ahd_password', 'pass', 'password', '_password', 'passwd', 'session_password', 'sessionpassword', 
                    'login_password', 'loginpassword', 'form_pw', 'pw', 'userpassword', 'pwd', 'upassword', 'login_password'
                    'passwort', 'passwrd', 'wppassword', 'upasswd', 'j_password']
-<<<<<<< HEAD
-
-SMBRead_userfields = ['Administrator','user', 'user_name', 'email', 'username', 'session_key', 'sessionkey']
-
-SMBRead_passfields = ['cpassword','password', 'pass', 'password', '_password', 'passwd']
-=======
->>>>>>> 910647bd2bd3374de3bd6e9007a9c4173242b3b6
 
 Filename = str(os.path.join(os.path.dirname(__file__),"CredentialDump-Session.log"))
 l= logging.getLogger('Credential-Session')
