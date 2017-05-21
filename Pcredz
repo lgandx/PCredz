@@ -307,20 +307,20 @@ def Decode_Ip_Packet(s):
     d['data']=s[4*d['header_len']:]
     return d
 
-def Print_Packet_Details(decoded,SrcPort,DstPort):
+def Print_Packet_Details(decoded,SrcPort,DstPort,packet_num):
     if timestamp:
         ts = '[%f] ' % time.time()
     else:
         ts = ''
     try:
-        return '%sprotocol: %s %s:%s > %s:%s' % (ts, protocols[decoded['protocol']],decoded['source_address'],SrcPort,
+        return '%s %sprotocol: %s %s:%s > %s:%s' % (str(packet_num),ts, protocols[decoded['protocol']],decoded['source_address'],SrcPort,
                                            decoded['destination_address'], DstPort)
     except:
-        return '%s%s:%s > %s:%s' % (ts,decoded['source_address'],SrcPort,
+        return '%s %s%s:%s > %s:%s' % (str(packet_num),ts,decoded['source_address'],SrcPort,
                                            decoded['destination_address'], DstPort)
 
 
-def ParseDataRegex(decoded, SrcPort, DstPort):
+def ParseDataRegex(decoded, SrcPort, DstPort, packet_num):
     HTTPUser = None
     HTTPass = None
     for user in http_userfields:
@@ -350,7 +350,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
         CC = False
     if Basic64:
         basic = ''.join(Basic64)
-        HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+        HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort,packet_num)
         try:
             Message = 'Found  HTTP Basic authentication: %s\n'%(b64decode(basic))
             if PrintPacket(Filename,Message):
@@ -361,7 +361,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
             pass
 
     if DstPort == 1433 and decoded['data'][20:22]=="\x10\x01" and len(NTLMSSP1) <=0:
-        HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+        HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort,packet_num)
         Message = ParseMSSQLPlainText(decoded['data'][20:])
         if PrintPacket(Filename,Message):
            l.warning(HeadMessage)
@@ -371,7 +371,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
     if DstPort == 88 and protocols.has_key(decoded['protocol']) and protocols[decoded['protocol']] == 'tcp':
         Message = ParseMSKerbv5TCP(decoded['data'][20:])
         if Message:
-            HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+            HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort,packet_num)
             if PrintPacket(Filename,Message[1]):
                 l.warning(HeadMessage)
                 l.warning(Message[0])
@@ -380,7 +380,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
     if DstPort == 88 and protocols.has_key(decoded['protocol']) and protocols[decoded['protocol']] == 'udp':
         Message = ParseMSKerbv5UDP(decoded['data'][8:])
         if Message:
-            HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+            HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort,packet_num)
             if PrintPacket(Filename,Message[1]):
                 l.warning(HeadMessage)
                 l.warning(Message[0])
@@ -389,7 +389,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
     if DstPort == 161:
         Message = ParseSNMP(decoded['data'][8:])
         if Message:
-            HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+            HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort,packet_num)
             if PrintPacket(Filename,Message):
                 l.warning(HeadMessage)
                 l.warning(Message)
@@ -398,7 +398,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
     if DstPort == 143:
         IMAPAuth = re.findall('(?<=LOGIN \")[^\r]*', decoded['data'])
         if IMAPAuth:
-            HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+            HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort,packet_num)
             Message = 'Found IMAP login: "%s\n'%(''.join(IMAPAuth))
             if PrintPacket(Filename,Message):
                 l.warning(HeadMessage)
@@ -412,7 +412,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
         if FTPPass:
             try:
                 POPUser
-                HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+                HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort,packet_num)
                 Message = 'Found POP credentials %s:%s\n'%(POPUser,''.join(FTPPass))
                 del POPUser
                 if PrintPacket(Filename,Message):
@@ -428,7 +428,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
                 host = re.findall("(Host: [^\n]+)", decoded['data'])
                 get_path = re.findall("(GET [^\n]+)", decoded['data'])
                 post_path = re.findall("(POST [^\n]+)", decoded['data'])
-                HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+                HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort,packet_num)
                 Message = 'Found possible HTTP authentication %s:%s\n' % (HTTPUser[0], HTTPass[0])
                 if host:
                     Message += '%s\n' % host[0].strip('\r')
@@ -452,7 +452,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
             SMTPAuthentication
             Message = ParseSMTP(decoded['data'][20:])
             if Message:
-                HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+                HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort,packet_num)
                 del SMTPAuthentication
                 if PrintPacket(Filename,Message):
                     l.warning(HeadMessage)
@@ -467,7 +467,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 
     if FTPPass and DstPort == 21:
         try:
-            HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+            HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort,packet_num)
             Message = 'FTP User: %s\n'%(UserID)
             Message+= 'FTP Pass: %s\n'%(''.join(FTPPass))
             del UserID
@@ -485,7 +485,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
             passw = re.findall('(?<=%s )[^\\r]*'%(password), decoded['data'], re.IGNORECASE)
             if passw:
                Message = "Found a password in an SMB read operation:\n%s:\n%s"%(password, passw)
-               HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+               HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort,packet_num)
                if PrintPacket(Filename,Message):
                   l.warning(HeadMessage)
                   l.warning(Message)
@@ -495,7 +495,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
             user = re.findall('(?<=%s )[^\\r]*'%(users), decoded['data'], re.IGNORECASE)
             if user:
                Message = "Found a username in an SMB read operation:\n%s:\n%s"%(users, user)
-               HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+               HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort,packet_num)
                if PrintPacket(Filename,Message):
                   l.warning(HeadMessage)
                   l.warning(Message)
@@ -515,7 +515,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
                 except NameError:
                     pass
                 else:
-                    HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+                    HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort,packet_num)
                     Message = ParseNTLMHash(NTLMPacket,Chall)
                     del Chall
                     if PrintPacket(Filename,Message[1]):
@@ -544,7 +544,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
                     except NameError:
                         pass
                     else:
-                        HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+                        HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort,packet_num)
                         Message = ParseNTLMHash(Packet,HTTPChall)
                         del HTTPChall
                         if PrintPacket(Filename,Message[1]):
@@ -559,7 +559,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
         CMatch = ''.join(CCMatch).strip()
         if len(CreditCard)<=16:
             if luhn(CreditCard):
-                HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+                HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort,packet_num)
                 MessageCC = 'Possible valid CC (Luhn check OK): %s\n'%(CreditCard)
                 MessageMatch= 'Please verify this match ( %s )\n'%('\033[1m\033[31m'+CMatch+'\033[0m')
                 if PrintPacket(Filename,MessageCC):
@@ -569,25 +569,25 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
     else:
         pass
 
-def Print_Packet_Cooked(pktlen, data, timestamp):
+def Print_Packet_Cooked(pktlen, data, timestamp, packet_num):
     if not data:
         return
     if data[14:16]=='\x08\x00':
         decoded=Decode_Ip_Packet(data[16:])
         SrcPort =  struct.unpack('>H',decoded['data'][0:2])[0]
         DstPort =  struct.unpack('>H',decoded['data'][2:4])[0]
-        ParseDataRegex(decoded, SrcPort, DstPort)
+        ParseDataRegex(decoded, SrcPort, DstPort, packet_num)
 
-def Print_Packet_800dot11(pktlen, data, timestamp):
+def Print_Packet_800dot11(pktlen, data, timestamp, packet_num):
     if not data:
         return
     if data[32:34]=='\x08\x00':
         decoded=Decode_Ip_Packet(data[34:])
         SrcPort =  struct.unpack('>H',decoded['data'][0:2])[0]
         DstPort =  struct.unpack('>H',decoded['data'][2:4])[0]
-        ParseDataRegex(decoded, SrcPort, DstPort)
+        ParseDataRegex(decoded, SrcPort, DstPort, packet_num)
 
-def Print_Packet_Tcpdump(pktlen, data, timestamp):
+def Print_Packet_Tcpdump(pktlen, data, timestamp, packet_num):
     if not data:
         return
     if data[12:14]=='\x08\x00':
@@ -600,7 +600,15 @@ def Print_Packet_Tcpdump(pktlen, data, timestamp):
             DstPort = struct.unpack('>H',decoded['data'][2:4])[0]
         else:
             DstPort = 0
-        ParseDataRegex(decoded, SrcPort, DstPort)
+        ParseDataRegex(decoded, SrcPort, DstPort, packet_num)
+		
+def loop_packets(pcap_object, func):
+    packet = pcap_object.next()
+    pnum = 1
+    while packet:
+        func(packet[0], packet[1], packet[2], pnum)
+        pnum += 1
+        packet = pcap_object.next()
 
 def decode_file(fname,res):
     if interface != None:
@@ -623,7 +631,7 @@ def decode_file(fname,res):
             l.warning('\n\nPcredz started, using:%s file'%(fname))
             Version = IsCookedPcap(res)
             if Version == 1:
-                thread = Thread(target = p.dispatch, args = (0, Print_Packet_Cooked))
+                thread = Thread(target = loop_packets, args = (p, Print_Packet_Cooked))
                 thread.daemon=True
                 thread.start()
                 try:
@@ -633,7 +641,7 @@ def decode_file(fname,res):
                     print '\n\nCRTL-C hit..Cleaning up...'
                     threading.Event().set()
             if Version == 2:
-                thread = Thread(target = p.dispatch, args = (0, Print_Packet_Cooked))
+                thread = Thread(target = loop_packets, args = (p, Print_Packet_Cooked))
                 thread.daemon=True
                 thread.start()
                 try:
@@ -644,7 +652,7 @@ def decode_file(fname,res):
                     threading.Event().set()
             if Version == 3:
 
-                thread = Thread(target = p.dispatch, args = (0, Print_Packet_Tcpdump))
+                thread = Thread(target = loop_packets, args = (p, Print_Packet_Tcpdump))
                 thread.daemon=True
                 thread.start()
                 try:
