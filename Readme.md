@@ -1,4 +1,8 @@
-#Features:
+# PCredz
+
+This tool extracts Credit card numbers, NTLM(DCE-RPC, HTTP, SQL, LDAP, etc), Kerberos (AS-REQ Pre-Auth etype 23), HTTP Basic, SNMP, POP, SMTP, FTP, IMAP, etc from a pcap file or from a live interface.
+
+## Features
 
 - Extract from a pcap file or from a live interface:
   - Credit card numbers
@@ -14,44 +18,51 @@
 - All hashes are displayed in a hashcat format (use -m 7500 for kerberos, -m 5500 for NTLMv1, -m 5600 for NTLMv2).
 - Log all credentials to a file (CredentialDump-Session.log).
 
-#Install:
+## Install
 
-- Linux:
+### Linux
 
-On a debian based OS: apt-get install python-libpcap
+On a debian based OS bash:
 
-On Kali, you will need to: apt-get remove python-pypcap && apt-get install python-libpcap
+```bash
+apt-get install python-libpcap
+```
 
-- Os X and other distributions: 
+On Kali, you will need to:
 
+```bash
+apt-get remove python-pypcap && apt-get install python-libpcap
+```
+
+### OSX and other distributions
+
+```bash
 wget http://downloads.sourceforge.net/project/pylibpcap/pylibpcap/0.6.4/pylibpcap-0.6.4.tar.gz
-
 tar xvf pylibpcap-0.6.4.tar.gz
-
 cd pylibpcap-0.6.4
-
 python setup.py install
+```
 
-
-#Usage:
+## Usage
  
+ ```
+ # extract credentials from a pcap file
 ./Pcredz -f file-to-parse.pcap
 
+# extract credentials from all pcap files in a folder
 ./Pcredz -d /tmp/pcap-directory-to-parse/
 
+# extract credentials from a live packet capture on a network interface
 ./Pcredz -i eth0
+```
 
-Options:
+### Options
 
+```bash
   -h, --help          show this help message and exit
-
   -f capture.pcap     Pcap file to parse
-
   -d /home/pnt/pcap/  Pcap directory to parse recursivly
-
   -i eth0             interface for live capture
-
   -v                  More verbose.
-
-
+```
 
