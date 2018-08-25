@@ -655,7 +655,14 @@ def decode_file(fname,res):
             print Message
             l.warning(Message)
             while 1:
-                p.dispatch(1, Print_Packet_Tcpdump)
+                thread = Thread(target = loop_packets, args = (p, Print_Packet_Tcpdump))
+                thread.daemon=True
+                thread.start()
+                try:
+                    while thread.is_alive():
+                        thread.join(timeout=1)
+                except:
+                    raise
         except (KeyboardInterrupt, SystemExit):
             print '\n\nCRTL-C hit...\nCleaning up...'
             sys.exit()
