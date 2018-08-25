@@ -134,6 +134,26 @@ def Is_Anonymous(data):
     else:
         return True
 
+def ParseCTX1Hash(data):
+    def decrypt(ct):
+        pt = ''
+        last = 0
+        for i in range(0, len(ct), 4):
+            pc = dec_letter(ct[i:i+4], last) 
+            pt += pc
+            last ^= ord(pc)
+        return pt
+
+    def dec_letter(ct, last=0):
+        c = (ord(ct[2]) - 1) & 0x0f
+        d = (ord(ct[3]) - 1) & 0x0f
+        x = c*16+d
+        pc = chr(x^last)
+        return pc
+
+    x = re.sub('[^A-P]', '', data.upper())
+    return str(decrypt(x))
+
 def ParseNTLMHash(data,Challenge):
     PacketLen = len(data)
     if PacketLen > 0:
@@ -342,6 +362,21 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
     NTLMSSP1 = re.findall('NTLMSSP\x00\x01\x00\x00\x00.*[^EOF]*', decoded['data'])
     NTLMSSP2 = re.findall('NTLMSSP\x00\x02\x00\x00\x00.*[^EOF]*', decoded['data'])
     NTLMSSP3 = re.findall('NTLMSSP\x00\x03\x00\x00\x00.*[^EOF]*', decoded['data'],re.DOTALL)
+
+    CTX1_USR = re.findall('<UserName>(.*?)</UserName><Password encoding="ctx1">', decoded['data'])
+    CTX1_PWD = re.findall('<Password encoding="ctx1">(.*?)</Password>', decoded['data'])
+
+    if CTX1_USR and CTX1_PWD:
+        HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+        try:
+            CTX1_USR = CTX1_USR[0]
+            CTX1_PWD = ParseCTX1Hash(CTX1_PWD[0])
+            CTX1_CREDS = CTX1_USR + ':' + CTX1_PWD
+            Message = 'Found CTX1 encoded password: %s\n'%CTX1_CREDS
+            print HeadMessage + '\n' + Message
+        except:
+            pass
+
     if activate_cc:
         CCMatch = re.findall('.{30}[^\d][3456][0-9]{3}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[^\d]', decoded['data'],re.DOTALL)
         CC = re.findall('[^\d][456][0-9]{3}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[^\d]', decoded['data'])
@@ -702,5 +737,6 @@ def Run():
     except:
         raise
 
-Run()
 
+
+Run()
