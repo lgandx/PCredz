@@ -34,7 +34,7 @@ from base64 import b64decode
 from threading import Thread
 
 def ShowWelcome():
-    Message = 'Pcredz 1.0.0\nAuthor: Laurent Gaffie\nPlease send bugs/comments/pcaps to: lgaffie@trustwave.com\nThis script will extract NTLM (http,ldap,smb,sql,etc), Kerberos,\nFTP, HTTP Basic and credit card data from a given pcap file or from a live interface.\n'
+    Message = 'Pcredz 1.0.0\nAuthor: Laurent Gaffie\nPlease send bugs/comments/pcaps to: laurent.gaffie@gmail.com\nThis script will extract NTLM (http,ldap,smb,sql,etc), Kerberos,\nFTP, HTTP Basic and credit card data from a given pcap file or from a live interface.\n'
     print Message
 
 parser = argparse.ArgumentParser(description='Pcredz 1.0.0\nAuthor: Laurent Gaffie')
