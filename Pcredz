@@ -45,6 +45,7 @@ m_group.add_argument('-i', type=str, dest="interface", default=None, help="inter
 parser.add_argument('-c', action="store_false", dest="activate_cc", default=True, help="deactivate CC number scanning (Can gives false positives!)")
 parser.add_argument('-t', action="store_true", dest="timestamp", help="Include a timestamp in all generated messages (useful for correlation)")
 parser.add_argument('-v', action="store_true", dest="Verbose", help="More verbose.")
+parser.add_argument('-o', type=str, dest="output", default=str(os.path.join(os.path.dirname(__file__), "CredentialDump-Session.log")), help="Output file path")
 
 options = parser.parse_args()
 
@@ -72,7 +73,7 @@ http_passfields = ['ahd_password', 'pass', 'password', '_password', 'passwd', 's
                    'login_password', 'loginpassword', 'form_pw', 'pw', 'userpassword', 'pwd', 'upassword', 'login_password',
                    'passwort', 'passwrd', 'wppassword', 'upasswd', 'j_password']
 
-Filename = str(os.path.join(os.path.dirname(__file__),"CredentialDump-Session.log"))
+Filename = options.output
 l= logging.getLogger('Credential-Session')
 l.addHandler(logging.FileHandler(Filename,'a'))
 
