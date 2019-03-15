@@ -585,7 +585,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort, packet_num):
                         if PrintPacket(Filename,Message[1]):
                             l.warning(HeadMessage)
                             l.warning(Message[0])
-                            print HeadMessage+'\n'+Message
+                            print HeadMessage+'\n'+Message[0]
         except:
             pass
 
