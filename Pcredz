@@ -360,7 +360,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort, packet_num):
     HTTPNTLM2 = re.findall('(?<=WWW-Authenticate: NTLM )[^\\r]*', decoded['data'])
     HTTPNTLM3 = re.findall('(?<=Authorization: NTLM )[^\\r]*', decoded['data'])
     NTLMSSP1 = re.findall('NTLMSSP\x00\x01\x00\x00\x00.*[^EOF]*', decoded['data'])
-    NTLMSSP2 = re.findall('NTLMSSP\x00\x02\x00\x00\x00.*[^EOF]*', decoded['data'])
+    NTLMSSP2 = re.findall('NTLMSSP\x00\x02\x00\x00\x00.*[^EOF]*', decoded['data'],re.DOTALL)
     NTLMSSP3 = re.findall('NTLMSSP\x00\x03\x00\x00\x00.*[^EOF]*', decoded['data'],re.DOTALL)
 
     CTX1_USR = re.findall('<UserName>(.*?)</UserName><Password encoding="ctx1">', decoded['data'])
