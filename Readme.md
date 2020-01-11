@@ -28,6 +28,12 @@ On a debian based OS bash:
 apt-get install python-libpcap
 ```
 
+Note: You might need to use a previous libpcap version on some distribution:
+
+```bash
+wget http://mirrors.kernel.org/ubuntu/pool/universe/p/python-libpcap/python-libpcap_0.6.4-1_amd64.deb && dpkg -i python-libpcap_0.6.4-1_amd64.deb
+```
+
 On Kali, you will need to:
 
 ```bash
