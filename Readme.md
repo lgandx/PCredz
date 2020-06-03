@@ -25,28 +25,7 @@ This tool extracts Credit card numbers, NTLM(DCE-RPC, HTTP, SQL, LDAP, etc), Ker
 On a debian based OS bash:
 
 ```bash
-apt-get install python-libpcap
-```
-
-Note: You might need to use a previous libpcap version on some distribution:
-
-```bash
-wget http://mirrors.kernel.org/ubuntu/pool/universe/p/python-libpcap/python-libpcap_0.6.4-1_amd64.deb && dpkg -i python-libpcap_0.6.4-1_amd64.deb
-```
-
-On Kali, you will need to:
-
-```bash
-apt-get remove python-pypcap && apt-get install python-libpcap
-```
-
-### OSX and other distributions
-
-```bash
-wget http://downloads.sourceforge.net/project/pylibpcap/pylibpcap/0.6.4/pylibpcap-0.6.4.tar.gz
-tar xvf pylibpcap-0.6.4.tar.gz
-cd pylibpcap-0.6.4
-python setup.py install
+apt install python3-pip && pip3 install Cython && pip3 install python-libpcap
 ```
 
 ## Usage
@@ -59,7 +38,7 @@ python setup.py install
 ./Pcredz -d /tmp/pcap-directory-to-parse/
 
 # extract credentials from a live packet capture on a network interface
-./Pcredz -i eth0
+./Pcredz -i eth0 -v
 ```
 
 ### Options
