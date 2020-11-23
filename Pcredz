@@ -334,6 +334,26 @@ def Decode_Ip_Packet(s):
 	d['data']=s[4*d['header_len']:]
 	return d
 
+def Decode_Ipv6_Packet(s):
+#	print("TEST: IPv6 packet\n")
+	d={}
+	d['version']=(s[0] & 0xf0) >> 4
+	d['nxthdr']=s[6]
+	d['plen']=struct.unpack("!h", s[4:6])[0]
+
+#	print("DEBUG: IP version: " +str(d['version']) + " Next header: " +str(d['nxthdr']) +" Payload length: " +str(d['plen']) +"\n")
+	d['source_address']="[" +socket.inet_ntop(socket.AF_INET6, s[8:24]) + "]"
+	d['destination_address']="[" +socket.inet_ntop(socket.AF_INET6, s[24:40]) + "]"
+
+#	print("DEBUG: source_address " +d['source_address'] +" destination address: " +d['destination_address'] +"\n")
+
+# hack - this assumes that there are no optional extension headers
+	d['protocol']=s[6]
+# hack - no optional headers so next header is at offset 40...
+# TODO: if s[6] is not tcp (6) or udp (17) parse the next header until we reach a tcp/udp header or the end of the packet
+	d['data']=s[40:]
+	return d
+
 def Print_Packet_Details(decoded,SrcPort,DstPort):
 	if timestamp:
 		ts = '[%f] ' % time.time()
@@ -520,6 +540,19 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 		except:
 			pass
 
+	if FTPPass and DstPort == 21:
+		try:
+			HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+			Message = 'FTP User: %s\n'%(UserID.decode('latin-1'))
+			Message+= 'FTP Pass: %s\n'%(b''.join(FTPPass).decode('latin-1'))
+			del UserID
+			if PrintPacket(Filename,Message):
+				l.warning(HeadMessage)
+				l.warning(Message)
+				print(HeadMessage+'\n'+Message)
+		except:
+			pass
+
 	if SrcPort == 445:
 		SMBRead_userfields = [b'Administrator',b'user', b'email', b'username', b'session_key', b'sessionkey']
 		SMBRead_passfields = [b'cpassword',b'password', b'pass', b'password', b'_password', b'passwd', b'pwd']
@@ -615,6 +648,11 @@ def Print_Packet_Cooked(pktlen, timestamp, data):
 		SrcPort =  struct.unpack('>H',decoded['data'][0:2])[0]
 		DstPort =  struct.unpack('>H',decoded['data'][2:4])[0]
 		ParseDataRegex(decoded, SrcPort, DstPort)
+	if data[14:16]== b'\x86\xdd':
+		decoded=Decode_Ip_Packet(data[16:])
+		SrcPort =  struct.unpack('>H',decoded['data'][0:2])[0]
+		DstPort =  struct.unpack('>H',decoded['data'][2:4])[0]
+		ParseDataRegex(decoded, SrcPort, DstPort)
 
 def Print_Packet_800dot11(pktlen, timestamp, data):
 	if not data:
@@ -624,12 +662,28 @@ def Print_Packet_800dot11(pktlen, timestamp, data):
 		SrcPort =  struct.unpack('>H',decoded['data'][0:2])[0]
 		DstPort =  struct.unpack('>H',decoded['data'][2:4])[0]
 		ParseDataRegex(decoded, SrcPort, DstPort)
+	if data[32:34]== b'\x86\xdd':
+		decoded=Decode_Ipv6_Packet(data[34:])
+		SrcPort =  struct.unpack('>H',decoded['data'][0:2])[0]
+		DstPort =  struct.unpack('>H',decoded['data'][2:4])[0]
+		ParseDataRegex(decoded, SrcPort, DstPort)
 
 def Print_Packet_Tcpdump(pktlen, timestamp, data):
 	if not data:
 		return
 	if data[12:14]== b'\x08\x00':
 		decoded= Decode_Ip_Packet(data[14:])
+		if len(decoded['data']) >= 2:
+			SrcPort= struct.unpack('>H',decoded['data'][0:2])[0]
+		else:
+			SrcPort = 0
+		if len(decoded['data']) > 2:
+			DstPort = struct.unpack('>H',decoded['data'][2:4])[0]
+		else:
+			DstPort = 0
+		ParseDataRegex(decoded, SrcPort, DstPort)
+	if data[12:14]== b'\x86\xdd':
+		decoded= Decode_Ipv6_Packet(data[14:])
 		if len(decoded['data']) >= 2:
 			SrcPort= struct.unpack('>H',decoded['data'][0:2])[0]
 		else:
