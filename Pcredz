@@ -179,10 +179,10 @@ def ParseNTLMHash(data,Challenge):
 		NtHash = codecs.encode(SSPIStart[NthashOffset:NthashOffset+NthashLen],"hex").upper()
 		DomainLen = struct.unpack('<H',data[30:32])[0]
 		DomainOffset = struct.unpack('<H',data[32:34])[0]
-		Domain = SSPIStart[DomainOffset:DomainOffset+DomainLen].strip(b"\x00")
+		Domain = SSPIStart[DomainOffset:DomainOffset+DomainLen].replace(b"\x00",b"")
 		UserLen = struct.unpack('<H',data[38:40])[0]
 		UserOffset = struct.unpack('<H',data[40:42])[0]
-		User = SSPIStart[UserOffset:UserOffset+UserLen].strip(b"\x00")
+		User = SSPIStart[UserOffset:UserOffset+UserLen].replace(b"\x00",b"")
 		writehash = '%s::%s:%s:%s:%s' % (User.decode('latin-1'),Domain.decode('latin-1'), LMHash.decode('latin-1'), NtHash.decode('latin-1'), Challenge.decode('latin-1'))
 		WriteData("logs/NTLMv1.txt", writehash, User)
 		return "NTLMv1 complete hash is: %s\n"%(writehash), User.decode('latin-1')+"::"+Domain.decode('latin-1')
@@ -191,10 +191,10 @@ def ParseNTLMHash(data,Challenge):
 		NtHash = codecs.encode(SSPIStart[NthashOffset:NthashOffset+NthashLen],"hex").upper()
 		DomainLen = struct.unpack('<H',data[30:32])[0]
 		DomainOffset = struct.unpack('<H',data[32:34])[0]
-		Domain = SSPIStart[DomainOffset:DomainOffset+DomainLen].strip(b"\x00")
+		Domain = SSPIStart[DomainOffset:DomainOffset+DomainLen].replace(b"\x00",b"")
 		UserLen = struct.unpack('<H',data[38:40])[0]
 		UserOffset = struct.unpack('<H',data[40:42])[0]
-		User = SSPIStart[UserOffset:UserOffset+UserLen].strip(b"\x00")
+		User = SSPIStart[UserOffset:UserOffset+UserLen].replace(b"\x00",b"")
 		writehash = '%s::%s:%s:%s:%s' % (User.decode('latin-1'),Domain.decode('latin-1'), Challenge.decode('latin-1'), NtHash[:32].decode('latin-1'), NtHash[32:].decode('latin-1'))
 		WriteData("logs/NTLMv2.txt", writehash, User)
 		return "NTLMv2 complete hash is: %s\n"%(writehash),User.decode('latin-1')+"::"+Domain.decode('latin-1')
