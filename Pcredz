@@ -604,7 +604,6 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 			if re.findall(b'NTLMSSP\x00\x02\x00\x00\x00.*[^EOF]*', Packet,re.DOTALL):
 				HTTPChall = codecs.encode(Packet[24:32],'hex')
 		except:
-			raise
 			pass
 
 	if HTTPNTLM3:
@@ -625,7 +624,6 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 							l.warning(Message[0])
 							print(HeadMessage+'\n'+Message[0])
 		except:
-			raise
 			pass
 
 	if CC:
