@@ -68,16 +68,6 @@ activate_cc = options.activate_cc
 timestamp = options.timestamp
 start_time = time.time()
 
-http_userfields = [b'log',b'login', b'wpname', b'ahd_username', b'unickname', b'nickname', b'user', b'user_name',
-                    b'alias', b'pseudo', b'email', b'username', b'_username', b'userid', b'form_loginname', b'loginname',
-                    b'login_id', b'loginid', b'session_key', b'sessionkey', b'pop_login', b'uid', b'id', b'user_id', b'screename',
-                    b'uname', b'ulogin', b'acctname', b'account', b'member', b'mailaddress', b'membername', b'login_username',
-                    b'login_email', b'loginusername', b'loginemail', b'uin', b'sign-in', b'j_username']
-
-http_passfields = [b'ahd_password', b'pass', b'password', b'_password', b'passwd', b'session_password', b'sessionpassword',
-                   b'login_password', b'loginpassword', b'form_pw', b'pw', b'userpassword', b'pwd', b'upassword', b'login_password',
-                   b'passwort', b'passwrd', b'wppassword', b'upasswd', b'j_password']
-
 Filename = str(os.path.join(os.path.dirname(__file__),"CredentialDump-Session.log"))
 l= logging.getLogger('Credential-Session')
 l.addHandler(logging.FileHandler(Filename,'a'))
@@ -92,8 +82,6 @@ def WriteData(outfile, data, user):
 		return
 	with open(outfile,"r") as filestr:
 		if re.search(codecs.encode(user,'hex'), codecs.encode(filestr.read().encode('latin-1'),'hex')):
-			return False
-		elif re.search(re.escape(b'$'), user):
 			return False
 	with open(outfile,"a") as outf2:
 		outf2.write(data + '\n')
@@ -379,13 +367,15 @@ def Print_Packet_Details(decoded,SrcPort,DstPort):
 def ParseDataRegex(decoded, SrcPort, DstPort):
 	HTTPUser = None
 	HTTPass = None
-	for user in http_userfields:
-		user = re.findall(b'(%s=[^&]+)' % user, decoded['data'], re.IGNORECASE)
+	HTTPusername = re.search(b'log|login|wpname|ahd_username|unickname|nickname|user|user_name|alias|pseudo|email|username|_username|userid|form_loginname|loginname|login_id|loginid|session_key|sessionkey|pop_login|uid|id|user_id|screename|uname|ulogin|acctname|account|member|mailaddress|membername|login_username|login_email|loginusername|loginemail|uin|sign-in|j_username', decoded['data'])
+	if HTTPusername:
+		user = re.findall(b'(%s=[^&]+)' % HTTPusername.group(0), decoded['data'], re.IGNORECASE)
 		if user:
 			HTTPUser = user
 
-	for password in http_passfields:
-		passw = re.findall(b'(%s=[^&]+)' % password, decoded['data'], re.IGNORECASE)
+	HTTPPasswd = re.search(b'ahd_password|pass|password|_password|passwd|session_password|sessionpassword|login_password|loginpassword|form_pw|pw|userpassword|pwd|upassword|login_passwordpasswort|passwrd|wppassword|upasswd|j_password', decoded['data'])
+	if HTTPPasswd:
+		passw = re.findall(b'(%s=[^&]+)' % HTTPPasswd.group(0), decoded['data'], re.IGNORECASE)
 		if passw:
 			HTTPass = passw
 
@@ -556,22 +546,22 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 			pass
 
 	if SrcPort == 445:
-		SMBRead_userfields = [b'Administrator',b'user', b'email', b'username', b'session_key', b'sessionkey']
-		SMBRead_passfields = [b'cpassword',b'password', b'pass', b'password', b'_password', b'passwd', b'pwd']
-		for password in SMBRead_passfields:
-			passw = re.findall(b'(?<=%s )[^\\r]*'%(password), decoded['data'], re.IGNORECASE)
-			if passw:
-				Message = "Found a password in an SMB read operation:\n%s:\n\"[%s]\""%(password.decode('latin-1'), b''.join(passw).decode('latin-1'))
+		SMBRead_passfields = re.search(b'cpassword|password|passwd', decoded['data'],re.IGNORECASE)
+		SMBRead_userfields = re.search(b'Administrator|user|email|username', decoded['data'],re.IGNORECASE)
+		if SMBRead_passfields:
+			smbpassw = re.findall(b'(?<=%s)[^\\r]*'%(SMBRead_passfields.group(0)), decoded['data'], re.IGNORECASE)
+			if smbpassw:
+				Message = "Found a password in an SMB read operation:\n[%s]\n"%(decoded['data'][95:].decode('latin-1'))
 				HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
 				if PrintPacket(Filename,Message):
 					l.warning(HeadMessage)
 					l.warning(Message)
 					print(HeadMessage+'\n'+Message)
 
-		for users in SMBRead_userfields:
-			user = re.findall(b'(?<=%s )[^\\r]*'%(users), decoded['data'], re.IGNORECASE)
-			if user:
-				Message = "Found a username in an SMB read operation:\n%s:\n\"[%s]\""%(users.decode('latin-1'), b''.join(user).decode('latin-1'))
+		if SMBRead_userfields:
+			smbuser = re.findall(b'(?<=%s)[^\\r]*'%(SMBRead_userfields.group(0)), decoded['data'], re.IGNORECASE)
+			if smbuser:
+				Message = "Found a username in an SMB read operation:\n%s\n"%(decoded['data'][95:].decode('latin-1'))
 				HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
 				if PrintPacket(Filename,Message):
 					l.warning(HeadMessage)
