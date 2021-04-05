@@ -23,7 +23,7 @@ try:
 	import pylibpcap as pcap
 	from pylibpcap.pcap import rpcap
 except ImportError:
-	print("libpcap not installed.\ntry : apt install python3-pip && pip3 install Cython && pip3 install python-libpcap")
+	print("libpcap not installed.\ntry : apt install python3-pip && sudo apt-get install libpcap-dev && pip3 install Cython && pip3 install python-libpcap")
 	exit()
 
 import logging
