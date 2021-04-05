@@ -1,5 +1,5 @@
-#! /usr/bin/env python
-# Pcredz 1.0.0
+#!/usr/bin/env python
+# Pcredz 2.0.2
 # Created by Laurent Gaffie
 #
 # This program is free software: you can redistribute it and/or modify
@@ -40,7 +40,7 @@ from base64 import b64decode
 from threading import Thread
 
 def ShowWelcome():
-	Message = 'Pcredz 2.0.1\nAuthor: Laurent Gaffie\nPlease send bugs/comments/pcaps to: laurent.gaffie@gmail.com\nThis script will extract NTLM (http,ldap,smb,sql,etc), Kerberos,\nFTP, HTTP Basic and credit card data from a given pcap file or from a live interface.\n'
+	Message = 'Pcredz 2.0.2\nAuthor: Laurent Gaffie\nPlease send bugs/comments/pcaps to: laurent.gaffie@gmail.com\nThis script will extract NTLM (HTTP,LDAP,SMB,MSSQL,RPC, etc), Kerberos,\nFTP, HTTP Basic and credit card data from a given pcap file or from a live interface.\n'
 	print(Message)
 
 parser = argparse.ArgumentParser(description='Pcredz 1.0.0\nAuthor: Laurent Gaffie')
@@ -351,6 +351,17 @@ def Decode_Ip_Packet(s):
 	d['data']=s[4*d['header_len']:]
 	return d
 
+def Decode_Ipv6_Packet(s):
+	d={}
+	d['version']=(s[0] & 0xf0) >> 4
+	d['nxthdr']=s[6]
+	d['plen']=struct.unpack("!h", s[4:6])[0]
+	d['source_address']="[" +socket.inet_ntop(socket.AF_INET6, s[8:24]) + "]"
+	d['destination_address']="[" +socket.inet_ntop(socket.AF_INET6, s[24:40]) + "]"
+	d['protocol']=s[6]
+	d['data']=s[40:]
+	return d
+
 def Print_Packet_Details(decoded,SrcPort,DstPort):
 	if timestamp:
 		ts = '[%f] ' % time.time()
@@ -640,11 +651,24 @@ def Print_Packet_Cooked(pktlen, timestamp, data):
 		DstPort =  struct.unpack('>H',decoded['data'][2:4])[0]
 		ParseDataRegex(decoded, SrcPort, DstPort)
 
+	if data[14:16]== b'\x86\xdd':
+		decoded=Decode_Ipv6_Packet(data[16:])
+		SrcPort =  struct.unpack('>H',decoded['data'][0:2])[0]
+		DstPort =  struct.unpack('>H',decoded['data'][2:4])[0]
+		ParseDataRegex(decoded, SrcPort, DstPort)
+
+
 def Print_Packet_800dot11(pktlen, timestamp, data):
 	if not data:
 		return
 	if data[32:34]== b'\x08\x00':
 		decoded=Decode_Ip_Packet(data[34:])
+		SrcPort =  struct.unpack('>H',decoded['data'][0:2])[0]
+		DstPort =  struct.unpack('>H',decoded['data'][2:4])[0]
+		ParseDataRegex(decoded, SrcPort, DstPort)
+
+	if data[32:34]== b'\x86\xdd':
+		decoded=Decode_Ipv6_Packet(data[34:])
 		SrcPort =  struct.unpack('>H',decoded['data'][0:2])[0]
 		DstPort =  struct.unpack('>H',decoded['data'][2:4])[0]
 		ParseDataRegex(decoded, SrcPort, DstPort)
@@ -663,7 +687,17 @@ def Print_Packet_Tcpdump(pktlen, timestamp, data):
 		else:
 			DstPort = 0
 		ParseDataRegex(decoded, SrcPort, DstPort)
-		
+
+	if data[12:14]== b'\x86\xdd':
+		decoded= Decode_Ipv6_Packet(data[14:])
+		if len(decoded['data']) >= 2:
+			SrcPort= struct.unpack('>H',decoded['data'][0:2])[0]
+		else:
+ 			SrcPort = 0
+		if len(decoded['data']) > 2:
+			DstPort = struct.unpack('>H',decoded['data'][2:4])[0]
+		ParseDataRegex(decoded, SrcPort, DstPort)
+
 def loop_packets(pcap_object, func):
 	for x in pcap_object:
 		func(x[0], x[1], x[2])

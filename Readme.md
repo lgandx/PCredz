@@ -4,7 +4,7 @@ This tool extracts Credit card numbers, NTLM(DCE-RPC, HTTP, SQL, LDAP, etc), Ker
 
 ## Features
 
-- Extract from a pcap file or from a live interface:
+- Extract from a pcap file or from a live interface IPv4 and IPv6:
   - Credit card numbers
   - POP
   - SMTP
