@@ -68,12 +68,14 @@ activate_cc = options.activate_cc
 timestamp = options.timestamp
 start_time = time.time()
 
-Filename = str(os.path.join(os.path.dirname(__file__),"CredentialDump-Session.log"))
+PcredzPath = os.path.abspath(os.path.join(os.path.dirname(__file__)))+"/"
+Filename = PcredzPath+"CredentialDump-Session.log"
 l= logging.getLogger('Credential-Session')
 l.addHandler(logging.FileHandler(Filename,'a'))
 
 # Function used to write captured hashs to a file.
 def WriteData(outfile, data, user):
+	outfile = PcredzPath+outfile
 	if type(user) is str:
 		user = user.encode('latin-1')
 	if not os.path.isfile(outfile):
