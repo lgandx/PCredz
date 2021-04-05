@@ -40,7 +40,7 @@ from base64 import b64decode
 from threading import Thread
 
 def ShowWelcome():
-	Message = 'Pcredz 2.0.0\nAuthor: Laurent Gaffie\nPlease send bugs/comments/pcaps to: laurent.gaffie@gmail.com\nThis script will extract NTLM (http,ldap,smb,sql,etc), Kerberos,\nFTP, HTTP Basic and credit card data from a given pcap file or from a live interface.\n'
+	Message = 'Pcredz 2.0.1\nAuthor: Laurent Gaffie\nPlease send bugs/comments/pcaps to: laurent.gaffie@gmail.com\nThis script will extract NTLM (http,ldap,smb,sql,etc), Kerberos,\nFTP, HTTP Basic and credit card data from a given pcap file or from a live interface.\n'
 	print(Message)
 
 parser = argparse.ArgumentParser(description='Pcredz 1.0.0\nAuthor: Laurent Gaffie')
@@ -81,6 +81,22 @@ http_passfields = [b'ahd_password', b'pass', b'password', b'_password', b'passwd
 Filename = str(os.path.join(os.path.dirname(__file__),"CredentialDump-Session.log"))
 l= logging.getLogger('Credential-Session')
 l.addHandler(logging.FileHandler(Filename,'a'))
+
+# Function used to write captured hashs to a file.
+def WriteData(outfile, data, user):
+	if type(user) is str:
+		user = user.encode('latin-1')
+	if not os.path.isfile(outfile):
+		with open(outfile,"w") as outf:
+			outf.write(data + '\n')
+		return
+	with open(outfile,"r") as filestr:
+		if re.search(codecs.encode(user,'hex'), codecs.encode(filestr.read().encode('latin-1'),'hex')):
+			return False
+		elif re.search(re.escape(b'$'), user):
+			return False
+	with open(outfile,"a") as outf2:
+		outf2.write(data + '\n')
 
 if activate_cc:
 	print("CC number scanning activated\n")
@@ -158,6 +174,7 @@ def ParseCTX1Hash(data):
 		return pc
 
 	x = re.sub('[^A-P]', '', data.upper())
+	WriteData("logs/CTX1-Plaintext.txt", Message, Message)
 	return str(decrypt(x))
 
 def ParseNTLMHash(data,Challenge):
@@ -179,6 +196,7 @@ def ParseNTLMHash(data,Challenge):
 		UserOffset = struct.unpack('<H',data[40:42])[0]
 		User = SSPIStart[UserOffset:UserOffset+UserLen].strip(b"\x00")
 		writehash = '%s::%s:%s:%s:%s' % (User.decode('latin-1'),Domain.decode('latin-1'), LMHash.decode('latin-1'), NtHash.decode('latin-1'), Challenge.decode('latin-1'))
+		WriteData("logs/NTLMv1.txt", writehash, User)
 		return "NTLMv1 complete hash is: %s\n"%(writehash), User.decode('latin-1')+"::"+Domain.decode('latin-1')
 
 	if NthashLen > 60:
@@ -190,6 +208,7 @@ def ParseNTLMHash(data,Challenge):
 		UserOffset = struct.unpack('<H',data[40:42])[0]
 		User = SSPIStart[UserOffset:UserOffset+UserLen].strip(b"\x00")
 		writehash = '%s::%s:%s:%s:%s' % (User.decode('latin-1'),Domain.decode('latin-1'), Challenge.decode('latin-1'), NtHash[:32].decode('latin-1'), NtHash[32:].decode('latin-1'))
+		WriteData("logs/NTLMv2.txt", writehash, User)
 		return "NTLMv2 complete hash is: %s\n"%(writehash),User.decode('latin-1')+"::"+Domain.decode('latin-1')
 	else:
 		return False
@@ -209,6 +228,7 @@ def ParseMSKerbv5TCP(Data):
 				DomainLen = struct.unpack('<b',Data[154+NameLen+3:154+NameLen+4])[0]
 				Domain = Data[154+NameLen+4:154+NameLen+4+DomainLen]
 				BuildHash = '$krb5pa$23$%s%s%s%s%s' % (Name.decode('latin-1'), "$", Domain.decode('latin-1'), "$dummy$", codecs.encode(SwitchHash,'hex').decode('latin-1'))
+				WriteData("logs/MSKerb.txt", BuildHash, Name)
 				return 'MSKerb hash found: %s\n'%(BuildHash),"$krb5pa$23$"+Name.decode('latin-1')+"$"+Domain.decode('latin-1')+"$dummy$"
 		if Data[44:48] == b"\xa2\x36\x04\x34" or Data[44:48] == b"\xa2\x35\x04\x33":
 			HashLen = struct.unpack('<b',Data[47:48])[0]
@@ -219,6 +239,7 @@ def ParseMSKerbv5TCP(Data):
 			DomainLen = struct.unpack('<b',Data[HashLen+97+NameLen+3:HashLen+97+NameLen+4])[0]
 			Domain = Data[HashLen+97+NameLen+4:HashLen+97+NameLen+4+DomainLen]
 			BuildHash = '$krb5pa$23$%s%s%s%s%s' % (Name.decode('latin-1'), "$", Domain.decode('latin-1'), "$dummy$", codecs.encode(SwitchHash,'hex').decode('latin-1'))
+			WriteData("logs/MSKerb.txt", BuildHash, Name)
 			return 'MSKerb hash found: %s\n'%(BuildHash),"$krb5pa$23$"+Name.decode('latin-1')+"$"+Domain.decode('latin-1')+"$dummy$"
 
 		else:
@@ -229,6 +250,7 @@ def ParseMSKerbv5TCP(Data):
 			DomainLen = struct.unpack('<b',Data[149+NameLen+3:149+NameLen+4])[0]
 			Domain = Data[149+NameLen+4:149+NameLen+4+DomainLen]
 			BuildHash = '$krb5pa$23$%s%s%s%s%s' % (Name.decode('latin-1'), "$", Domain.decode('latin-1'), "$dummy$", codecs.encode(SwitchHash,'hex').decode('latin-1'))
+			WriteData("logs/MSKerb.txt", BuildHash, Name)
 			return 'MSKerb hash found: %s\n'%(BuildHash),"$krb5pa$23$"+Name.decode('latin-1')+"$"+Domain.decode('latin-1')+"$dummy$"
 	else:
 		return False
@@ -247,6 +269,7 @@ def ParseMSKerbv5UDP(Data):
 				DomainLen = struct.unpack('<b',Data[145+NameLen+3:145+NameLen+4])[0]
 				Domain = Data[145+NameLen+4:145+NameLen+4+DomainLen]
 				BuildHash = '$krb5pa$23$%s%s%s%s%s' % (Name.decode('latin-1'), "$", Domain.decode('latin-1'), "$dummy$", codecs.encode(SwitchHash,'hex').decode('latin-1'))
+				WriteData("logs/MSKerb.txt", BuildHash, Name)
 				return 'MSKerb hash found: %s\n'%(BuildHash),"$krb5pa$23$"+Name.decode('latin-1')+"$"+Domain.decode('latin-1')+"$dummy$"
 			if HashLen == 53:
 				Hash = Data[44:95]
@@ -256,6 +279,7 @@ def ParseMSKerbv5UDP(Data):
 				DomainLen = struct.unpack('<b',Data[144+NameLen+3:144+NameLen+4])[0]
 				Domain = Data[144+NameLen+4:144+NameLen+4+DomainLen]
 				BuildHash = '$krb5pa$23$%s%s%s%s%s' % (Name.decode('latin-1'), "$", Domain.decode('latin-1'), "$dummy$", codecs.encode(SwitchHash,'hex').decode('latin-1'))
+				WriteData("logs/MSKerb.txt", BuildHash, Name)
 				return 'MSKerb hash found: %s\n'%(BuildHash),"$krb5pa$23$"+Name.decode('latin-1')+"$"+Domain.decode('latin-1')+"$dummy$"
 
 		else:
@@ -267,6 +291,7 @@ def ParseMSKerbv5UDP(Data):
 			DomainLen = struct.unpack('<b',Data[HashLen+98+NameLen+3:HashLen+98+NameLen+4])[0]
 			Domain = Data[HashLen+98+NameLen+4:HashLen+98+NameLen+4+DomainLen]
 			BuildHash = '$krb5pa$23$%s%s%s%s%s' % (Name.decode('latin-1'), "$", Domain.decode('latin-1'), "$dummy$", codecs.encode(SwitchHash,'hex').decode('latin-1'))
+			WriteData("logs/MSKerb.txt", BuildHash, Name)
 			return 'MSKerb hash found: %s\n'%(BuildHash),"$krb5pa$23$"+Name.decode('latin-1')+"$"+Domain.decode('latin-1')+"$dummy$"
 
 	else:
@@ -277,9 +302,11 @@ def ParseSNMP(data):
 	SNMPVersion = data[4:5]
 	if SNMPVersion == b"\x00":
 		StrLen = struct.unpack('<b',data[6:7])[0]
+		WriteData("logs/SNMPv1.txt", data[7:7+StrLen].decode('latin-1'), data[7:7+StrLen].decode('latin-1'))
 		return 'Found SNMPv1 Community string: %s\n'%(data[7:7+StrLen].decode('latin-1'))
 	if data[3:5] == b"\x01\x01":
 		StrLen = struct.unpack('<b',data[6:7])[0]
+		WriteData("logs/SNMPv2.txt", data[7:7+StrLen].decode('latin-1'), data[7:7+StrLen].decode('latin-1'))
 		return 'Found SNMPv2 Community string: %s\n'%(data[7:7+StrLen].decode('latin-1'))
 
 
@@ -291,6 +318,7 @@ def ParseSMTP(data):
 			Basestr = b64decode(basic)
 			if len(Basestr)>1:
 				if Basestr.decode('ascii'):
+					WriteData("logs/SMTP-Plaintext.txt", Basestr.decode('latin-1'), Basestr.decode('latin-1'))
 					return 'SMTP decoded Base64 string: %s\n'%(Basestr.decode('latin-1'))
 		except:
 			pass
@@ -311,6 +339,7 @@ def ParseMSSQLPlainText(data):
 	UsernameLen = PwdOffset-UsernameOffset
 	PwdStr = ParseSqlClearTxtPwd(data[8+PwdOffset:8+PwdOffset+PwdLen])
 	UserName = data[8+UsernameOffset:8+UsernameOffset+UsernameLen].decode('utf-16le')
+	WriteData("logs/MSSQL-Plaintext.txt", "MSSQL Username: %s Password: %s"%(UserName, PwdStr), UserName)
 	return "MSSQL Username: %s Password: %s"%(UserName, PwdStr)
 
 def Decode_Ip_Packet(s):
@@ -395,6 +424,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 		HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
 		try:
 			Message = 'Found  HTTP Basic authentication: %s\n'%(b64decode(basic).decode('latin-1'))
+			WriteData("logs/HTTP-Basic.txt", Message, Message)
 			if PrintPacket(Filename,Message):
 				l.warning(HeadMessage)
 				l.warning(Message)
@@ -442,6 +472,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 		if IMAPAuth:
 			HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
 			Message = 'Found IMAP login: "%s"\n'%(''.join(IMAPAuth[0].decode('latin-1')))
+			WriteData("logs/IMAP-Plaintext.txt", Message, Message)
 			if PrintPacket(Filename,Message):
 				l.warning(HeadMessage)
 				l.warning(Message)
@@ -456,6 +487,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 				POPUser
 				HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
 				Message = 'Found POP credentials %s:%s\n'%(POPUser.decode('latin-1'), b''.join(FTPPass).decode('latin-1'))
+				WriteData("logs/POP-Plaintext.txt", Message, Message)
 				del POPUser
 				if PrintPacket(Filename,Message):
 					l.warning(HeadMessage)
@@ -472,6 +504,8 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 				post_path = re.findall(b"(POST [^\n]+)", decoded['data'])
 				HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
 				Message = 'Found possible HTTP authentication %s:%s\n' % (HTTPUser[0].decode('latin-1'), HTTPass[0].decode('latin-1'))
+				WriteData("logs/HTTP-Login-Forms.txt", Message, Message)
+
 				if host:
 					Message += '%s\n' % host[0].decode('latin-1').strip('\r')
 				if get_path:
@@ -512,6 +546,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 			HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
 			Message = 'FTP User: %s\n'%(UserID.decode('latin-1'))
 			Message+= 'FTP Pass: %s\n'%(b''.join(FTPPass).decode('latin-1'))
+			WriteData("logs/FTP-Plaintext.txt", Message, Message)
 			del UserID
 			if PrintPacket(Filename,Message):
 				l.warning(HeadMessage)
@@ -552,7 +587,6 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 		try:
 			NTLMPacket = b''.join(NTLMSSP3)
 			if Is_Anonymous(NTLMPacket):
-				
 				HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
 				Message = ParseNTLMHash(NTLMPacket,Chall)
 				del Chall
@@ -564,12 +598,14 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 			pass
 
 	if HTTPNTLM2:
+		print("yep")
 		try:
 			Packet = b64decode(b''.join(HTTPNTLM2))
 			global HTTPChall
 			if re.findall(b'NTLMSSP\x00\x02\x00\x00\x00.*[^EOF]*', Packet,re.DOTALL):
 				HTTPChall = codecs.encode(Packet[24:32],'hex')
 		except:
+			raise
 			pass
 
 	if HTTPNTLM3:
@@ -590,6 +626,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 							l.warning(Message[0])
 							print(HeadMessage+'\n'+Message[0])
 		except:
+			raise
 			pass
 
 	if CC:
@@ -648,20 +685,14 @@ def loop_packets(pcap_object, func):
 def decode_file(fname,res):
 	if interface != None:
 		try:
-			from pylibpcap.pcap import sniff
+			from pylibpcap.pcap import Sniff
 			Message = "Pcredz live capture started, using:%s\nStarting timestamp (%s) corresponds to %s"%(interface, time.time(), time.strftime('%x %X'))
 			print(Message)
 			l.warning(Message)
-			p = sniff(interface, filters="", count=-1, promisc=1)
-			while p:
-				thread = Thread(target = loop_packets, args = (p, Print_Packet_Tcpdump))
-				thread.daemon=True
-				thread.start()
-				try:
-					while thread.is_alive():
-						thread.join(timeout=1)
-				except:
-					raise
+			p = Sniff(interface, count=-1, promisc=1)
+			for plen, t, buf in p.capture():
+				Print_Packet_Tcpdump(plen, t, buf)
+
 		except (KeyboardInterrupt, SystemExit):
 			print("\n\nCRTL-C hit..Cleaning up...")
 			threading.Event().set()
