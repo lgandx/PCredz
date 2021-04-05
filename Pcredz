@@ -598,7 +598,6 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 			pass
 
 	if HTTPNTLM2:
-		print("yep")
 		try:
 			Packet = b64decode(b''.join(HTTPNTLM2))
 			global HTTPChall
