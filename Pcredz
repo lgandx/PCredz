@@ -726,7 +726,7 @@ def decode_file(fname,res):
 			l.warning('\n\nPcredz started, using:%s file'%(fname))
 			Version = IsCookedPcap(res)
 			if Version == 1:
-				thread = Thread(target = loop_packets, args = (p, Print_Packet_Cooked))
+				thread = Thread(target = loop_packets, args = (p, Print_Packet_800dot11))
 				thread.daemon=True
 				thread.start()
 				try:
