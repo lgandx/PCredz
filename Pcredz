@@ -107,7 +107,7 @@ def PrintPacket(Filename,Message):
 		return True
 
 def IsCookedPcap(version):
-	Cooked = re.search(b'Linux \"cooked\"', version)
+	Cooked = re.search(b'Linux \"?cooked\"?', version)
 	TcpDump = re.search(b'Ethernet', version)
 	Wifi = re.search(b'802.11', version)
 	if Wifi:
