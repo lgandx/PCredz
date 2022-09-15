@@ -53,6 +53,7 @@ m_group.add_argument('-i', type=str, dest="interface", default=None, help="inter
 parser.add_argument('-c', action="store_false", dest="activate_cc", default=True, help="deactivate CC number scanning (Can gives false positives!)")
 parser.add_argument('-t', action="store_true", dest="timestamp", help="Include a timestamp in all generated messages (useful for correlation)")
 parser.add_argument('-v', action="store_true", dest="Verbose", help="More verbose.")
+parser.add_argument('-o', type=str, dest="output_path", default=os.path.abspath(os.path.join(os.path.dirname(__file__)))+"/", help="output directory")
 
 options = parser.parse_args()
 
@@ -70,7 +71,9 @@ activate_cc = options.activate_cc
 timestamp = options.timestamp
 start_time = time.time()
 
-PcredzPath = os.path.abspath(os.path.join(os.path.dirname(__file__)))+"/"
+PcredzPath = options.output_path
+if not PcredzPath.endswith('/'):
+	PcredzPath += '/'
 Filename = PcredzPath+"CredentialDump-Session.log"
 l= logging.getLogger('Credential-Session')
 l.addHandler(logging.FileHandler(Filename,'a'))
@@ -81,6 +84,8 @@ def WriteData(outfile, data, user):
 	if type(user) is str:
 		user = user.encode('latin-1')
 	if not os.path.isfile(outfile):
+		if not os.path.isdir(os.path.dirname(outfile)):
+			os.makedirs(os.path.dirname(outfile))
 		with open(outfile,"w") as outf:
 			outf.write(data + '\n')
 		return
