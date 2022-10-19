@@ -7,6 +7,7 @@ RUN apt install python3 \
     python3-pip \
     libpcap-dev \
     nano \
+    iproute2 \
     git \
     bash \
     bash-doc \
