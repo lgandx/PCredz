@@ -21,6 +21,19 @@ This tool extracts Credit card numbers, NTLM(DCE-RPC, HTTP, SQL, LDAP, etc), Ker
 
 ## Install
 
+### Docker
+Install docker and clone the repo
+
+Build the container
+```bash
+$ docker build . -t pcredz
+```
+
+Then use the command below to map the current working directory inside the Pcredz container. This is useful for moving .pcap files to parse or for retrieving log files from a live capture.
+```bash
+$ docker run --net=host -v $(pwd):/opt/Pcredz -it pcredz
+```
+
 ### Linux
 
 On a debian based OS bash:
