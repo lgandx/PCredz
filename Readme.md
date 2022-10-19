@@ -44,11 +44,12 @@ python3 ./Pcredz -i eth0 -v
 
 ### Options
 
-```bash
+```
   -h, --help          show this help message and exit
   -f capture.pcap     Pcap file to parse
   -d /home/pnt/pcap/  Pcap directory to parse recursivly
   -i eth0             interface for live capture
   -v                  More verbose.
+  -o output_dir       Store log files in output_dir instead of the directory containing Pcredz.
 ```
 
