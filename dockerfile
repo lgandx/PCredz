@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
-FROM debian:buster-slim
+#FROM debian:buster-slim
+FROM python:3.7.15-slim-buster
 
 # Install apt packages
 RUN apt update
