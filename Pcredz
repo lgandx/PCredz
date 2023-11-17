@@ -400,12 +400,18 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 			HTTPass = passw
 
 	HTTPNegotiateAuthz = re.findall(b'(?<=Authorization: Negotiate )[^\\r]*', decoded['data'])
-	if HTTPNegotiateAuthz:
-		decoded['data'] = b64decode(b''.join(HTTPNegotiateAuthz))
+	try:
+		if HTTPNegotiateAuthz:
+			decoded['data'] = b64decode(b''.join(HTTPNegotiateAuthz))
+	except:
+		pass
 
 	HTTPNegotiateWWW = re.findall(b'(?<=WWW-Authenticate: Negotiate )[^\\r]*', decoded['data'])
-	if HTTPNegotiateWWW:
-		decoded['data'] = b64decode(b''.join(HTTPNegotiateWWW))
+	try:
+		if HTTPNegotiateWWW:
+			decoded['data'] = b64decode(b''.join(HTTPNegotiateWWW))
+	except:
+		pass
 
 	SMTPAuth = re.search(b'AUTH LOGIN|AUTH PLAIN', decoded['data'])
 	Basic64 = re.findall(b'(?<=Authorization: Basic )[^\n]*', decoded['data'])
