@@ -794,12 +794,12 @@ def Run():
 					decode_file(FilePath,res)
 					Seconds = time.time() - Start_Time
 					FileSize = 'File size %.3g Mo'%(os.stat(FilePath).st_size/(1024*1024.0))
-					if Seconds>60:
+					if Seconds >= 60:
 						minutes = Seconds/60
 						Message = '\n%s parsed in: %.3g minutes (%s).\n'%(FilePath, minutes, FileSize)
 						print(Message)
 						l.warning(Message)
-					if Seconds<60:
+					else:
 						Message = '\n%s parsed in: %.3g seconds (%s).\n'%(FilePath, Seconds, FileSize)
 						print(Message)
 						l.warning(Message)
@@ -810,12 +810,12 @@ def Run():
 			decode_file(fname,res)
 			Seconds = time.time() - start_time
 			FileSize = 'File size %.3g Mo'%(os.stat(fname).st_size/(1024*1024.0))
-			if Seconds>60:
+			if Seconds >= 60:
 				minutes = Seconds/60
 				Message = '\n%s parsed in: %.3g minutes (%s).\n'%(fname, minutes, FileSize)
 				print(Message)
 				l.warning(Message)
-			if Seconds<60:
+			else:
 				Message = '\n%s parsed in: %.3g seconds (%s).\n'%(fname, Seconds, FileSize)
 				print(Message)
 				l.warning(Message)
