@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Pcredz 2.0.2
 # Created by Laurent Gaffie
 #
@@ -337,7 +337,7 @@ def ParseMSSQLPlainText(data):
 	PwdStr = ParseSqlClearTxtPwd(data[8+PwdOffset:8+PwdOffset+PwdLen])
 	UserName = data[8+UsernameOffset:8+UsernameOffset+UsernameLen].decode('utf-16le')
 	WriteData("logs/MSSQL-Plaintext.txt", "MSSQL Username: %s Password: %s"%(UserName, PwdStr), UserName)
-	return "MSSQL Username: %s Password: %s"%(UserName, PwdStr)
+	return "MSSQL Username: %s Password: %s\n"%(UserName, PwdStr)
 
 def Decode_Ip_Packet(s):
 	d={}
