@@ -211,9 +211,9 @@ def ParseNTLMHash(data,Challenge):
 		return False
 
 def ParseMSKerbv5TCP(Data):
-	MsgType = Data[21:22]
-	EncType = Data[43:44]
-	MessageType = Data[32:33]
+	MsgType = Data[19:20]
+	EncType = Data[41:42]
+	MessageType = Data[30:31]
 	if MsgType == b"\x0a" and EncType == b"\x17" and MessageType ==b"\x02":
 		if Data[49:53] == b"\xa2\x36\x04\x34" or Data[49:53] == b"\xa2\x35\x04\x33":
 			HashLen = struct.unpack('<b',Data[50:51])[0]
@@ -227,14 +227,14 @@ def ParseMSKerbv5TCP(Data):
 				BuildHash = '$krb5pa$23$%s%s%s%s%s' % (Name.decode('latin-1'), "$", Domain.decode('latin-1'), "$dummy$", codecs.encode(SwitchHash,'hex').decode('latin-1'))
 				WriteData("logs/MSKerb.txt", BuildHash, Name)
 				return 'MSKerb hash found: %s\n'%(BuildHash),"$krb5pa$23$"+Name.decode('latin-1')+"$"+Domain.decode('latin-1')+"$dummy$"
-		if Data[44:48] == b"\xa2\x36\x04\x34" or Data[44:48] == b"\xa2\x35\x04\x33":
-			HashLen = struct.unpack('<b',Data[47:48])[0]
-			Hash = Data[48:48+HashLen]
+		if Data[42:46] == b"\xa2\x36\x04\x34" or Data[42:46] == b"\xa2\x35\x04\x33":
+			HashLen = struct.unpack('<b',Data[45:46])[0]
+			Hash = Data[46:46+HashLen]
 			SwitchHash = Hash[16:]+Hash[0:16]
-			NameLen = struct.unpack('<b',Data[HashLen+96:HashLen+96+1])[0]
-			Name = Data[HashLen+97:HashLen+97+NameLen]
-			DomainLen = struct.unpack('<b',Data[HashLen+97+NameLen+3:HashLen+97+NameLen+4])[0]
-			Domain = Data[HashLen+97+NameLen+4:HashLen+97+NameLen+4+DomainLen]
+			NameLen = struct.unpack('<b',Data[HashLen+94:HashLen+94+1])[0]
+			Name = Data[HashLen+95:HashLen+95+NameLen]
+			DomainLen = struct.unpack('<b',Data[HashLen+95+NameLen+3:HashLen+95+NameLen+4])[0]
+			Domain = Data[HashLen+95+NameLen+4:HashLen+95+NameLen+4+DomainLen]
 			BuildHash = '$krb5pa$23$%s%s%s%s%s' % (Name.decode('latin-1'), "$", Domain.decode('latin-1'), "$dummy$", codecs.encode(SwitchHash,'hex').decode('latin-1'))
 			WriteData("logs/MSKerb.txt", BuildHash, Name)
 			return 'MSKerb hash found: %s\n'%(BuildHash),"$krb5pa$23$"+Name.decode('latin-1')+"$"+Domain.decode('latin-1')+"$dummy$"
@@ -249,6 +249,7 @@ def ParseMSKerbv5TCP(Data):
 			BuildHash = '$krb5pa$23$%s%s%s%s%s' % (Name.decode('latin-1'), "$", Domain.decode('latin-1'), "$dummy$", codecs.encode(SwitchHash,'hex').decode('latin-1'))
 			WriteData("logs/MSKerb.txt", BuildHash, Name)
 			return 'MSKerb hash found: %s\n'%(BuildHash),"$krb5pa$23$"+Name.decode('latin-1')+"$"+Domain.decode('latin-1')+"$dummy$"
+	
 	else:
 		return False
 
@@ -465,13 +466,14 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 			print(HeadMessage+'\n'+Message)
 
 	if DstPort == 88 and protocols[decoded['protocol']] == 'tcp':
-		Message = ParseMSKerbv5TCP(decoded['data'][20:])
-		if Message:
-			HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
-			if PrintPacket(Filename,Message[1]):
-				l.warning(HeadMessage)
-				l.warning(Message[0])
-				print(HeadMessage+'\n'+Message[0])
+		if len(decoded['data'][20:]) > 20:
+			Message = ParseMSKerbv5TCP(decoded['data'][20:])
+			if Message:
+				HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+				if PrintPacket(Filename,Message[1]):
+					l.warning(HeadMessage)
+					l.warning(Message[0])
+					print(HeadMessage+'\n'+Message[0])
 
 	if DstPort == 88 and protocols[decoded['protocol']] == 'udp':
 		Message = ParseMSKerbv5UDP(decoded['data'][8:])
