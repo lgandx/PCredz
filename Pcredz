@@ -439,8 +439,8 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 			pass
 
 	if activate_cc:
-		CCMatch = re.findall(b'.{30}[^\d][3456][0-9]{3}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[^\d]', decoded['data'],re.DOTALL)
-		CC = re.findall(b'[^\d][456][0-9]{3}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[^\d]', decoded['data'])
+		CCMatch = re.findall(rb'.{30}[^\d][3456][0-9]{3}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[^\d]', decoded['data'],re.DOTALL)
+		CC = re.findall(rb'[^\d][456][0-9]{3}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[^\d]', decoded['data'])
 	else:
 		CCMatch = False
 		CC = False
@@ -653,7 +653,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 			pass
 
 	if CC:
-		CreditCard = re.sub(b"\D", b"", b''.join(CC).strip())
+		CreditCard = re.sub(rb"\D", b"", b''.join(CC).strip())
 		CMatch = b''.join(CCMatch).strip()
 		if len(CreditCard)<=16:
 			if luhn(CreditCard.decode('latin-1')):
