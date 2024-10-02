@@ -7,6 +7,7 @@ RUN apt update
 RUN apt install python3 \
     python3-pip \
     libpcap-dev \
+    file \
     nano \
     iproute2 \
     git \
