@@ -336,7 +336,11 @@ def ParseMSSQLPlainText(data):
 	PwdLen = AppOffset-PwdOffset
 	UsernameLen = PwdOffset-UsernameOffset
 	PwdStr = ParseSqlClearTxtPwd(data[8+PwdOffset:8+PwdOffset+PwdLen])
-	UserName = data[8+UsernameOffset:8+UsernameOffset+UsernameLen].decode('utf-16le')
+	try:
+		UserName = data[8+UsernameOffset:8+UsernameOffset+UsernameLen].decode('utf-16le')
+	except BaseException as e:
+		print("Error decoding:", data, '\n', e)
+
 	WriteData("logs/MSSQL-Plaintext.txt", "MSSQL Username: %s Password: %s"%(UserName, PwdStr), UserName)
 	return "MSSQL Username: %s Password: %s\n"%(UserName, PwdStr)
 
