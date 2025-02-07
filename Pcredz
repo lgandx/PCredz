@@ -101,16 +101,14 @@ else:
 	print("CC number scanning is deactivated\n")
 
 def PrintPacket(Filename,Message):
-	if Verbose == True:
+	if Verbose:
 		return True
-	if os.path.isfile(Filename) == True:
+	
+	try:
 		with open(Filename,"r") as filestr:
-			if re.search(re.escape(Message), filestr.read()):
-				filestr.close()
-				return False
-			else:
-				return True
-	else:
+			return !re.search(re.escape(Message), filestr.read())
+		
+	except OSError:
 		return True
 
 def IsCookedPcap(version):
@@ -148,10 +146,7 @@ def luhn(n):
 
 def Is_Anonymous(data):
 	LMhashLen = struct.unpack('<H',data[14:16])[0]
-	if LMhashLen == 0 or LMhashLen == 1:
-		return False
-	else:
-		return True
+	return LMhashLen > 1:
 
 def ParseCTX1Hash(data):
 	def decrypt(ct):
