@@ -394,7 +394,7 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 		if user:
 			HTTPUser = user
 
-	HTTPPasswd = re.search(b'ahd_password|pass|password|_password|passwd|session_password|sessionpassword|login_password|loginpassword|form_pw|pw|userpassword|pwd|upassword|login_passwordpasswort|passwrd|wppassword|upasswd|j_password', decoded['data'])
+	HTTPPasswd = re.search(b'ahd_password|password|pass|_password|passwd|session_password|sessionpassword|login_password|loginpassword|form_pw|pw|userpassword|pwd|upassword|login_passwordpasswort|passwrd|wppassword|upasswd|j_password', decoded['data'])
 	if HTTPPasswd:
 		passw = re.findall(b'(%s=[^&]+)' % HTTPPasswd.group(0), decoded['data'], re.IGNORECASE)
 		if passw:
