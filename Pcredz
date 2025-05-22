@@ -42,7 +42,7 @@ from threading import Thread
 PcredzVersion='2.0.2'
 
 def ShowWelcome():
-	Message = f'Pcredz {PcredzVersion}\nAuthor: Laurent Gaffie\nPlease send bugs/comments/pcaps to: laurent.gaffie@gmail.com\nThis script will extract NTLM (HTTP,LDAP,SMB,MSSQL,RPC, etc), Kerberos,\nFTP, HTTP Basic and credit card data from a given pcap file or from a live interface.\n'
+	Message = f'Pcredz {PcredzVersion}\n\nAuthor: Laurent Gaffie <lgaffie@secorizon.com>\n\nThis script will extract NTLM (HTTP,LDAP,SMB,MSSQL,RPC, etc), Kerberos,\nFTP, HTTP Basic and credit card data from a given pcap file or from a live interface.\n'
 	print(Message)
 
 parser = argparse.ArgumentParser(description=f'Pcredz {PcredzVersion}\nAuthor: Laurent Gaffie')
@@ -521,29 +521,29 @@ def ParseDataRegex(decoded, SrcPort, DstPort):
 					print(HeadMessage+'\n'+Message)
 			except NameError:
 				pass
+    #let's look on any ports.
+	#if DstPort == 80:
+	if (HTTPUser and HTTPass):
+		try:
+			host = re.findall(b"(Host: [^\n]+)", decoded['data'])
+			get_path = re.findall(b"(GET [^\n]+)", decoded['data'])
+			post_path = re.findall(b"(POST [^\n]+)", decoded['data'])
+			HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
+			Message = 'Found possible HTTP authentication %s:%s\n' % (HTTPUser[0].decode('latin-1'), HTTPass[0].decode('latin-1'))
+			WriteData("logs/HTTP-Login-Forms.txt", Message, Message)
 
-	if DstPort == 80:
-		if (HTTPUser and HTTPass):
-			try:
-				host = re.findall(b"(Host: [^\n]+)", decoded['data'])
-				get_path = re.findall(b"(GET [^\n]+)", decoded['data'])
-				post_path = re.findall(b"(POST [^\n]+)", decoded['data'])
-				HeadMessage = Print_Packet_Details(decoded,SrcPort,DstPort)
-				Message = 'Found possible HTTP authentication %s:%s\n' % (HTTPUser[0].decode('latin-1'), HTTPass[0].decode('latin-1'))
-				WriteData("logs/HTTP-Login-Forms.txt", Message, Message)
-
-				if host:
-					Message += '%s\n' % host[0].decode('latin-1').strip('\r')
-				if get_path:
-					Message += 'Full path: %s\n' % get_path[0].decode('latin-1').strip('\r')
-				if post_path:
-					Message += 'Full path: %s\n' % post_path[0].decode('latin-1').strip('\r')
-				if PrintPacket(Filename,Message):
-					l.warning(HeadMessage)
-					l.warning(Message)
-					print(HeadMessage+'\n'+Message)
-			except:
-				pass
+			if host:
+				Message += '%s\n' % host[0].decode('latin-1').strip('\r')
+			if get_path:
+				Message += 'Full path: %s\n' % get_path[0].decode('latin-1').strip('\r')
+			if post_path:
+				Message += 'Full path: %s\n' % post_path[0].decode('latin-1').strip('\r')
+			if PrintPacket(Filename,Message):
+				l.warning(HeadMessage)
+				l.warning(Message)
+				print(HeadMessage+'\n'+Message)
+		except:
+			pass
 
 	if DstPort == 25 and SMTPAuth or DstPort == 587 and SMTPAuth:
 		global SMTPAuthentication
@@ -732,7 +732,7 @@ def decode_file(fname,res):
 	if interface != None:
 		try:
 			from pylibpcap.pcap import Sniff
-			Message = "Pcredz live capture started, using:%s\nStarting timestamp (%s) corresponds to %s"%(interface, time.time(), time.strftime('%x %X'))
+			Message = "Pcredz live capture started, using: %s\nStarting timestamp (%s) corresponds to %s"%(interface, time.time(), time.strftime('%x %X'))
 			print(Message)
 			l.warning(Message)
 			p = Sniff(interface, count=-1, promisc=1)
