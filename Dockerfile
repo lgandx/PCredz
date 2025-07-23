@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-#FROM debian:buster-slim
-FROM python:3.7.15-slim-buster
+#FROM debian:bullseye-slim
+FROM python:3.9.23-slim-bullseye
 
 # Install apt packages
 RUN apt update
