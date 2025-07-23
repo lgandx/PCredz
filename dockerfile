@@ -3,6 +3,7 @@
 FROM python:3.7.15-slim-buster
 
 # Install apt packages
+RUN sed -i s/deb.debian.org/archive.debian.org/g /etc/apt/sources.list && sed -i s/security.debian.org/archive.debian.org/g /etc/apt/sources.list
 RUN apt update
 RUN apt install python3 \
     python3-pip \
