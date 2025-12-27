@@ -99,9 +99,9 @@ def parse_data_regex(decoded, src_port, dst_port, config):
     
     # SNMP (161)
     if dst_port == 161:
-        result = auth_parsers.parse_snmp(data[8:], config)
+        result = auth_parsers.parse_snmp(data, config)  # data already has UDP header skipped
         if result and config['verbose']:
-            print(f"{src_ip}:{src_port} > {dst_ip}:{dst_port}\n{result}")
+            print(f"protocol: udp {src_ip}:{src_port} > {dst_ip}:{dst_port}\n{result}")
     
     # MSSQL (1433)
     if dst_port == 1433 and data[20:22] == b"\x10\x01":
