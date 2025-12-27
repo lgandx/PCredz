@@ -26,7 +26,24 @@ def parse_data_regex(decoded, src_port, dst_port, config):
     """Main parsing dispatcher - calls all relevant parsers"""
     src_ip = decoded['source_address']
     dst_ip = decoded['destination_address']
-    data = decoded['data']
+    
+    # decoded['data'] contains TCP/UDP segment
+    # For TCP: need to skip TCP header (20+ bytes)
+    # TCP header length is in bits 12-15 of offset 12 (data offset field * 4)
+    tcp_data = decoded['data']
+    
+    # Extract TCP payload (skip TCP header)
+    if decoded['protocol'] == 6:  # TCP
+        if len(tcp_data) > 12:
+            tcp_header_len = ((tcp_data[12] >> 4) & 0x0F) * 4
+            data = tcp_data[tcp_header_len:]  # Skip TCP header
+        else:
+            data = tcp_data
+    elif decoded['protocol'] == 17:  # UDP
+        data = tcp_data[8:]  # Skip 8-byte UDP header
+    else:
+        data = tcp_data
+    
     
     # Cloud credentials detection (check all traffic)
     cloud_parsers.parse_cloud_credentials(data, src_ip, dst_ip, config)
@@ -147,6 +164,23 @@ def print_packet_tcpdump(pktlen, timestamp, data, config):
     """Handle standard tcpdump/Ethernet capture format"""
     if not data:
         return
+    
+    # Check if this is raw IP (some PCAPs don't have Ethernet headers)
+    if len(data) >= 1 and (data[0] >> 4) == 4:  # IPv4 (version field = 4)
+        # Raw IP packet, no Ethernet header
+        decoded = decode_ip_packet(data)
+        if len(decoded['data']) >= 2:
+            src_port = struct.unpack('>H', decoded['data'][0:2])[0]
+        else:
+            src_port = 0
+        if len(decoded['data']) > 2:
+            dst_port = struct.unpack('>H', decoded['data'][2:4])[0]
+        else:
+            dst_port = 0
+        parse_data_regex(decoded, src_port, dst_port, config)
+        return
+    
+    # Standard Ethernet frame
     if data[12:14] == b'\x08\x00':
         decoded = decode_ip_packet(data[14:])
         if len(decoded['data']) >= 2:

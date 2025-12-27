@@ -35,7 +35,7 @@ class TextWriter(OutputWriter):
             if not os.path.isdir(os.path.dirname(filepath)):
                 os.makedirs(os.path.dirname(filepath))
             with open(filepath, "w") as outf:
-                outf.write(data + '\\n')
+                outf.write(data + '\n')
             return
             
         # Check for duplicates
@@ -47,7 +47,7 @@ class TextWriter(OutputWriter):
                 return False
                 
         with open(filepath, "a") as outf2:
-            outf2.write(data + '\\n')
+            outf2.write(data + '\n')
 
 
 class JSONWriter(OutputWriter):

@@ -64,7 +64,7 @@ def parse_arguments():
     
     # Output options
     parser.add_argument('-o', type=str, dest="output_path",
-                       default=os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))+"/",
+                       default="./",
                        help="Output directory")
     parser.add_argument('--json', action="store_true", dest="json_output",
                        help="Output credentials in JSON format")
