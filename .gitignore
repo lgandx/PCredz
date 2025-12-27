@@ -14,9 +14,6 @@ credentials.csv
 CredentialDump-Session.log
 
 # Artifact files
-*.md
-!Readme.md
-!README.md
 
 # Python
 *.pyc
