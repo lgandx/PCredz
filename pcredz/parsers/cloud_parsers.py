@@ -42,7 +42,7 @@ def parse_cloud_credentials(data, src_ip, dst_ip, config):
     github_tokens = GITHUB_TOKEN_RE.findall(data)
     for token in github_tokens:
         token_str = token.decode('latin-1')
-        message = f'🔐 Found GitHub Token: {token_str[:20]}...\n'
+        message = f'🔐 Found GitHub Token: {token_str[:30]}...\n'
         
         if not is_credential_duplicate("github", token_str, config['deduplicate']):
             config['text_writer'].write_to_file("logs/Cloud-Credentials.txt", message, token_str)
@@ -61,7 +61,8 @@ def parse_cloud_credentials(data, src_ip, dst_ip, config):
             config['csv_writer'].write(cred_dict["timestamp"], "GitHub", src_ip, 0, dst_ip, 0, "pat_token", "N/A", token_str, "Personal Access Token")
             send_webhook_alert(config['webhook_url'], cred_dict, config['verbose'])
             
-            print("\033[1m\033[31m" + f"{src_ip} > {dst_ip}" + '\n' + message + "\033[0m")
+            if config['verbose']:
+                print("\033[1m\033[31m" + f"{src_ip} > {dst_ip}" + '\n' + message + "\033[0m")
     
     # Azure connection strings
     if b'AccountKey=' in data or b'SharedAccessSignature=' in data:

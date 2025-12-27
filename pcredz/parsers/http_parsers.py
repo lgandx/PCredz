@@ -49,19 +49,41 @@ def parse_http_basic(data, src_ip, dst_ip, config):
 
 def parse_http_forms(data, src_ip, dst_ip, config):
     """Parse HTTP form-based authentication"""
+    # Look for common form field patterns
     http_user = HTTP_USERNAME_RE.search(data)
     http_pass = HTTP_PASSWORD_RE.search(data)
     
     if http_user and http_pass:
-        user_match = re.findall(b'(%s=[^&]+)' % http_user.group(0), data, re.IGNORECASE)
-        pass_match = re.findall(b'(%s=[^&]+)' % http_pass.group(0), data, re.IGNORECASE)
+        user_match = re.findall(b'(%s=[^&\r\n]+)' % http_user.group(0), data, re.IGNORECASE)
+        pass_match = re.findall(b'(%s=[^&\r\n]+)' % http_pass.group(0), data, re.IGNORECASE)
         
         if user_match and pass_match:
             try:
-                message = f'Found possible HTTP authentication {user_match[0].decode("latin-1")}:{pass_match[0].decode("latin-1")}\n'
+                import urllib.parse
+                # Decode URL encoding
+                user_str = user_match[0].decode('latin-1')
+                pass_str = pass_match[0].decode('latin-1')
                 
-                if not is_credential_duplicate(user_match[0].decode('latin-1'), pass_match[0].decode('latin-1'), config['deduplicate']):
-                    config['text_writer'].write_to_file("logs/HTTP-Login-Forms.txt", message, message)
+                # Extract values after =
+                user_value = urllib.parse.unquote(user_str.split('=', 1)[1] if '=' in user_str else user_str)
+                pass_value = urllib.parse.unquote(pass_str.split('=', 1)[1] if '=' in pass_str else pass_str)
+                
+                message = f'Found HTTP Form Login: {user_value}:{pass_value}\n'
+                
+                if not is_credential_duplicate(user_value, pass_value, config['deduplicate']):
+                    config['text_writer'].write_to_file("logs/HTTP-Login-Forms.txt", message, user_value)
+                    
+                    cred_dict = {
+                        "timestamp": datetime.now().isoformat(),
+                        "protocol": "HTTP",
+                        "src_ip": src_ip,
+                        "dst_ip": dst_ip,
+                        "credential_type": "form_login",
+                        "username": user_value,
+                        "password": pass_value,
+                    }
+                    config['json_writer'].write(cred_dict)
+                    config['csv_writer'].write(cred_dict["timestamp"], "HTTP", src_ip, 0, dst_ip, 0, "form_login", user_value, pass_value, "Form POST")
                     
                     if config['verbose']:
                         print(f"{src_ip} > {dst_ip}\n{message}")

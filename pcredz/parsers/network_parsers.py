@@ -52,41 +52,37 @@ def parse_ssh(data, src_ip, dst_ip, src_port, dst_port, config):
 
 def parse_telnet(data, src_ip, dst_ip, src_port, dst_port, config):
     """Parse Telnet plaintext credentials"""
-    # Remove telnet IAC sequences
-    cleaned_data = re.sub(b'\xff[\xf0-\xff].?', b'', data)
+    # Simple approach: look for plain ASCII input after prompts
+    # Remove IAC sequences and look for readable text
+    cleaned = re.sub(b'\xff[\xf0-\xff].?', b'', data)
     
-    login_patterns = [b'login:', b'username:', b'user:', b'Password:', b'password:']
-    
-    for pattern in login_patterns:
-        if pattern.lower() in cleaned_data.lower():
-            parts = cleaned_data.split(pattern)
-            if len(parts) > 1:
-                potential_cred = parts[1][:50].strip()
-                potential_cred = re.sub(b'[\x00-\x1f\x7f-\xff]', b'', potential_cred)
+    # Look for text input (alphanumeric strings)
+    text_match = re.search(rb'([a-zA-Z0-9_@.\-]{3,32})(?:\r\n|\n)', cleaned)
+    if text_match:
+        cred_str = text_match.group(1).decode('latin-1', errors='ignore')
+        # Filter out common noise
+        if cred_str not in ['login', 'password', 'Password', 'user', 'username']:
+            message = f'Telnet: {cred_str}\n'
+            
+            if not is_credential_duplicate("telnet", cred_str, config['deduplicate']):
+                config['text_writer'].write_to_file("logs/Telnet-Plaintext.txt", message, cred_str)
                 
-                if len(potential_cred) >= 3:
-                    cred_str = potential_cred.decode('latin-1', errors='ignore')
-                    message = f'Found Telnet credential: {cred_str}\n'
-                    
-                    if not is_credential_duplicate("telnet", cred_str, config['deduplicate']):
-                        config['text_writer'].write_to_file("logs/Telnet-Plaintext.txt", message, cred_str)
-                        
-                        cred_dict = {
-                            "timestamp": datetime.now().isoformat(),
-                            "protocol": "Telnet",
-                            "src_ip": src_ip,
-                            "src_port": src_port,
-                            "dst_ip": dst_ip,
-                            "dst_port": dst_port,
-                            "credential_type": "plaintext",
-                            "username": cred_str,
-                            "password": "N/A",
-                        }
-                        config['json_writer'].write(cred_dict)
-                        config['csv_writer'].write(cred_dict["timestamp"], "Telnet", src_ip, src_port, dst_ip, dst_port, "plaintext", cred_str, "N/A", f"After {pattern.decode()}")
-                        
-                        if config['verbose']:
-                            print(f"tcp {src_ip}:{src_port} > {dst_ip}:{dst_port}\n{message}")
+                cred_dict = {
+                    "timestamp": datetime.now().isoformat(),
+                    "protocol": "Telnet",
+                    "src_ip": src_ip,
+                    "src_port": src_port,
+                    "dst_ip": dst_ip,
+                    "dst_port": dst_port,
+                    "credential_type": "plaintext",
+                    "username": cred_str,
+                    "password": "N/A",
+                }
+                config['json_writer'].write(cred_dict)
+                config['csv_writer'].write(cred_dict["timestamp"], "Telnet", src_ip, src_port, dst_ip, dst_port, "plaintext", cred_str, "N/A", "Telnet input")
+                
+                if config['verbose']:
+                    print(f"tcp {src_ip}:{src_port} > {dst_ip}:{dst_port}\n{message}")
 
 
 def parse_ftp(data, src_ip, dst_ip, config):
@@ -116,6 +112,24 @@ def parse_ftp(data, src_ip, dst_ip, config):
 
 def parse_smtp(data, config):
     """Parse SMTP authentication"""
+    # Check for AUTH PLAIN
+    if b'AUTH PLAIN' in data:
+        auth_match = re.search(rb'AUTH PLAIN ([A-Za-z0-9+/=]+)', data)
+        if auth_match:
+            try:
+                decoded = b64decode(auth_match.group(1))
+                # AUTH PLAIN format: \x00username\x00password
+                parts = decoded.split(b'\x00')
+                if len(parts) >= 3:
+                    username = parts[1].decode('latin-1', errors='ignore')
+                    password = parts[2].decode('latin-1', errors='ignore')
+                    message = f'SMTP AUTH PLAIN: {username}:{password}\n'
+                    config['text_writer'].write_to_file("logs/SMTP-Plaintext.txt", message, username)
+                    return message
+            except:
+                pass
+    
+    # Original SMTP parser
     basic = data[0:len(data)-2]
     op_code = [b'HELO', b'EHLO', b'MAIL', b'RCPT', b'SIZE', b'DATA', b'QUIT', b'VRFY', b'EXPN', b'RSET']
     if data[0:4] not in op_code:
