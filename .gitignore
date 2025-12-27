@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+*.swp
+*.swo
+*~
+logs/
+credentials.json
+credentials.csv
+CredentialDump-Session.log
