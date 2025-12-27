@@ -22,7 +22,7 @@ def parse_ssh(data, src_ip, dst_ip, src_port, dst_port, config):
     if len(data) > 50:
         try:
             if b'\x32' in data or b'ssh-userauth' in data:
-                username_match = re.search(b'([a-zA-Z0-9_\-\.]{3,32})\x00.*password', data)
+                username_match = re.search(rb'([a-zA-Z0-9_\-\.]{3,32})\x00.*password', data)
                 if username_match:
                     username = username_match.group(1).decode('latin-1', errors='ignore')
                     message = f'Found SSH authentication attempt: {username}\n'

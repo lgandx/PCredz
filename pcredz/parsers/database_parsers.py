@@ -123,7 +123,7 @@ def parse_mssql_plaintext(data, config):
 def parse_redis(data, src_ip, dst_ip, src_port, dst_port, config):
     """Parse Redis AUTH commands"""
     if b'AUTH' in data:
-        auth_match = re.search(b'AUTH\r\n\$([0-9]+)\r\n([^\r]+)', data)
+        auth_match = re.search(rb'AUTH\r\n\$([0-9]+)\r\n([^\r]+)', data)
         if auth_match:
             password_len = int(auth_match.group(1))
             password = auth_match.group(2).decode('latin-1', errors='ignore')[:password_len]
