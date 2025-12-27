@@ -48,14 +48,18 @@ def parse_data_regex(decoded, src_port, dst_port, config):
     # Cloud credentials detection (check all traffic)
     cloud_parsers.parse_cloud_credentials(data, src_ip, dst_ip, config)
     
-    # Credit card detection (if enabled) - check full TCP segment like original
+    # Credit card detection (original Pcredz implementation with Luhn)
     if config.get('activate_cc', True):
-        from . import cc_parser
-        cc_parser.parse_credit_cards(tcp_data, src_ip, dst_ip, config)
+        from . import legacy_original
+        legacy_original.parse_credit_cards(tcp_data, src_ip, dst_ip, config)
     
     # HTTP parsers
     http_parsers.parse_http_basic(data, src_ip, dst_ip, config)
-    http_parsers.parse_http_forms(data, src_ip, dst_ip, config)
+    
+    # HTTP forms (original Pcredz implementation)
+    from . import legacy_original
+    legacy_original.parse_http_forms_original(tcp_data, src_ip, dst_ip, config)
+    
     http_parsers.parse_ntlm_http(data, src_ip, dst_ip, config)
     http_parsers.parse_oauth_jwt(data, src_ip, dst_ip, config)
     http_parsers.parse_api_keys(data, src_ip, dst_ip, config)
