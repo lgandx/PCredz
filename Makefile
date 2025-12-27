@@ -32,9 +32,18 @@ install:
 # Build Linux executable
 build-linux: clean
 	@echo "Building Linux standalone executable..."
-	pyinstaller --onefile --name pcredz-linux --add-data "pcredz:pcredz" run_pcredz.py
+	pyinstaller --onefile --name pcredz-linux \
+		--add-data "pcredz:pcredz" \
+		--hidden-import=pylibpcap \
+		--hidden-import=pylibpcap.pcap \
+		--collect-all=pylibpcap \
+		--hidden-import=pcredz.parsers \
+		--hidden-import=pcredz.output \
+		--hidden-import=pcredz.utils \
+		run_pcredz.py
 	@echo ""
 	@echo "✓ Linux executable created: dist/pcredz-linux"
+	@echo "  Size: $$(du -h dist/pcredz-linux | cut -f1)"
 	@echo "  Test with: ./dist/pcredz-linux -f tests/realistic_network_traffic.pcap"
 
 # Build Windows executable (requires Wine + Python for Windows)

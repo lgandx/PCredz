@@ -1,12 +1,19 @@
 # -*- mode: python ; coding: utf-8 -*-
+from PyInstaller.utils.hooks import collect_all
+
+datas = [('pcredz', 'pcredz')]
+binaries = []
+hiddenimports = ['pylibpcap', 'pylibpcap.pcap', 'pcredz.parsers', 'pcredz.output', 'pcredz.utils']
+tmp_ret = collect_all('pylibpcap')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 a = Analysis(
     ['run_pcredz.py'],
     pathex=[],
-    binaries=[],
-    datas=[('pcredz', 'pcredz')],
-    hiddenimports=[],
+    binaries=binaries,
+    datas=datas,
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
