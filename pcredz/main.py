@@ -30,9 +30,6 @@ from .config import VERSION, PROTOCOLS
 from .utils import is_credential_duplicate
 from .output import TextWriter, JSONWriter, CSVWriter, send_webhook_alert
 
-# Import all parsers
-from .parsers import all_parsers
-
 
 def show_welcome():
     """Display welcome banner"""

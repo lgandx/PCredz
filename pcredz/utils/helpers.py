@@ -3,7 +3,7 @@
 import hashlib
 import re
 from typing import Dict, Set
-from .config import WEAK_PASSWORDS
+from ..config import WEAK_PASSWORDS
 
 # Global state for deduplication
 credential_hashes: Set[str] = set()
