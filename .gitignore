@@ -46,3 +46,5 @@ tests/*.pcap
 # IDE
 .vscode/
 .idea/
+Pcredz.original
+*.backup

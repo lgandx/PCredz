@@ -50,15 +50,15 @@ def parse_data_regex(decoded, src_port, dst_port, config):
     
     # Credit card detection (original Pcredz implementation with Luhn)
     if config.get('activate_cc', True):
-        from . import legacy_original
-        legacy_original.parse_credit_cards(tcp_data, src_ip, dst_ip, config)
+        from . import credential_extractors
+        credential_extractors.parse_credit_cards(tcp_data, src_ip, dst_ip, config)
     
     # HTTP parsers
     http_parsers.parse_http_basic(data, src_ip, dst_ip, config)
     
     # HTTP forms (original Pcredz implementation)
-    from . import legacy_original
-    legacy_original.parse_http_forms_original(tcp_data, src_ip, dst_ip, config)
+    from . import credential_extractors
+    credential_extractors.parse_http_forms_original(tcp_data, src_ip, dst_ip, config)
     
     http_parsers.parse_ntlm_http(data, src_ip, dst_ip, config)
     http_parsers.parse_oauth_jwt(data, src_ip, dst_ip, config)
