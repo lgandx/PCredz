@@ -48,6 +48,11 @@ def parse_data_regex(decoded, src_port, dst_port, config):
     # Cloud credentials detection (check all traffic)
     cloud_parsers.parse_cloud_credentials(data, src_ip, dst_ip, config)
     
+    # Credit card detection (if enabled) - check full TCP segment like original
+    if config.get('activate_cc', True):
+        from . import cc_parser
+        cc_parser.parse_credit_cards(tcp_data, src_ip, dst_ip, config)
+    
     # HTTP parsers
     http_parsers.parse_http_basic(data, src_ip, dst_ip, config)
     http_parsers.parse_http_forms(data, src_ip, dst_ip, config)
