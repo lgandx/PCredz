@@ -25,12 +25,13 @@ def parse_credit_cards(data, src_ip, dst_ip, config):
         return
     
     # Credit card patterns (Visa, MC, Amex, Discover)
+    # Updated to handle + in URL-encoded data
     cc_match_context = re.findall(
-        rb'.{30}[^\d][3456][0-9]{3}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[^\d]',
+        rb'.{30}[^\d][3456][0-9]{3}[\s\-+]*[0-9]{4}[\s\-+]*[0-9]{4}[\s\-+]*[0-9]{4}[^\d]',
         data, re.DOTALL
     )
     cc_matches = re.findall(
-        rb'[^\d][456][0-9]{3}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[\s-]*[0-9]{4}[^\d]',
+        rb'[^\d][456][0-9]{3}[\s\-+]*[0-9]{4}[\s\-+]*[0-9]{4}[\s\-+]*[0-9]{4}[^\d]',
         data
     )
     
