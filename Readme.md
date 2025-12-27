@@ -66,3 +66,156 @@ python3 ./Pcredz -i eth0 -v
   -o output_dir       Store log files in output_dir instead of the directory containing Pcredz.
 ```
 
+# SSL/TLS Traffic Analysis with PCredz
+
+## The Challenge
+
+**PCredz cannot directly decrypt SSL/TLS (HTTPS) traffic** because:
+- SSL/TLS encrypts all application data
+- Credentials in HTTPS are encrypted and appear as random bytes
+- You need the private key or session keys to decrypt
+
+## Solutions to Analyze HTTPS Traffic
+
+### Option 1: MITM Proxy (Recommended for Testing)
+
+Use a Man-in-the-Middle proxy to decrypt and re-encrypt traffic:
+
+#### Using mitmproxy:
+```bash
+# Install
+pip install mitmproxy
+
+# Start proxy
+mitmproxy -w capture.mitm
+
+# Configure browser/app to use proxy (localhost:8080)
+# Install mitmproxy CA certificate in browser
+
+# Convert to PCAP
+mitmdump -r capture.mitm -w - | tcpdump -r - -w decrypted.pcap
+
+# Analyze
+python3 -m pcredz -f decrypted.pcap -v
+```
+
+#### Using Burp Suite:
+1. Start Burp Suite proxy
+2. Configure target to use proxy
+3. Install Burp's CA certificate  
+4. Export traffic as PCAP from Burp
+5. Analyze with PCredz
+
+### Option 2: Browser SSL Key Logging
+
+For research/testing, browsers can log TLS session keys:
+
+```bash
+# Set environment variable BEFORE starting browser
+export SSLKEYLOGFILE=/tmp/ssl-keys.log
+
+# Start browser (Chrome/Firefox)
+google-chrome
+
+# Capture traffic
+tcpdump -i any -w traffic.pcap
+
+# Decrypt in Wireshark:
+# Edit -> Preferences -> Protocols -> TLS
+# -> (Pre)-Master-Secret log filename: /tmp/ssl-keys.log
+
+# Export decrypted traffic as new PCAP
+# File -> Export Packet Dissections -> as "PCAP"
+
+# Analyze
+python3 -m pcredz -f decrypted.pcap
+```
+
+### Option 3: Server-Side Capture (If You Control Server)
+
+If you own the server:
+
+```bash
+# Use nginx/Apache to log decrypted traffic
+# OR capture before SSL termination at load balancer
+
+# At load balancer (before SSL):
+tcpdump -i lo -w backend.pcap port 8080
+
+# Analyze backend traffic (unencrypted)
+python3 -m pcredz -f backend.pcap
+```
+
+### Option 4: Endpoint Monitoring
+
+Instead of network capture, monitor at the endpoint:
+
+```bash
+# Linux: Use LD_PRELOAD to hook SSL functions
+# Windows: Use API Monitor or Frida
+
+# Hook openssl/gnutls read/write functions
+# Log plaintext before encryption
+```
+
+## What PCredz CAN Detect in HTTPS
+
+Even with encrypted HTTPS, PCredz can still extract:
+
+1. **Server Name Indication (SNI)** - Unencrypted domain in ClientHello
+2. **TLS Handshake Info** - Cipher suites, versions
+3. **Certificate Information** - Server certificates are unencrypted
+4. **Traffic Patterns** - Timing, packet sizes
+
+But **NOT** application data (credentials, cookies, etc.)
+
+## Recommended Workflow for Security Testing
+
+```bash
+# 1. Set up MITM proxy
+mitmproxy -w test.mitm --set ssl_insecure=true
+
+# 2. Configure target application to use proxy
+export HTTP_PROXY=http://localhost:8080
+export HTTPS_PROXY=http://localhost:8080
+
+# 3. Run your tests/application
+
+# 4. Save traffic
+mitmdump -r test.mitm -w decrypted.pcap
+
+# 5. Analyze with PCredz
+python3 -m pcredz -f decrypted.pcap -v --json --csv
+```
+
+## Legal & Ethical Considerations
+
+⚠️ **WARNING**: 
+- Only decrypt traffic you own or have explicit permission to analyze
+- MITM attacks on production systems without authorization is illegal
+- Use only for:
+  - Your own applications during development
+  - Authorized penetration testing
+  - Research in isolated lab environments
+
+## Alternative: Analyze Protocol-Specific Tools
+
+Instead of decrypting SSL, use protocol-specific tools:
+
+- **HTTP/HTTPS**: Browser DevTools, Burp, ZAP
+- **Database TLS**: Server-side query logging
+- **SSH**: AuthLog on server
+- **RDP**: Windows Event Logs
+
+Then export those logs and analyze patterns.
+
+## Summary
+
+| Method | Difficulty | Use Case |
+|--------|-----------|----------|
+| MITM Proxy | Easy | Testing your own apps |
+| SSLKEYLOGFILE | Easy | Browser-based apps |
+| Server-side | Medium | Own infrastructure |
+| Endpoint hooks | Hard | Advanced research |
+
+**Bottom line**: PCredz works on **plaintext network traffic only**. For HTTPS, you must decrypt it first using one of the methods above.

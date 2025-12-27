@@ -12,3 +12,37 @@ logs/
 credentials.json
 credentials.csv
 CredentialDump-Session.log
+
+# Artifact files
+*.md
+!Readme.md
+!README.md
+
+# Python
+*.pyc
+*.pyo
+__pycache__/
+*.egg-info/
+dist/
+build/
+
+# Logs and outputs
+logs/
+*.log
+credentials.json
+credentials.csv
+CredentialDump-Session.log
+
+# Test files
+tests/*.pcap
+!tests/generate_realistic_traffic.py
+
+# Temporary
+*.swp
+*.swo
+*~
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

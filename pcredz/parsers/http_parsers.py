@@ -49,13 +49,25 @@ def parse_http_basic(data, src_ip, dst_ip, config):
 
 def parse_http_forms(data, src_ip, dst_ip, config):
     """Parse HTTP form-based authentication"""
-    # Look for common form field patterns
-    http_user = HTTP_USERNAME_RE.search(data)
-    http_pass = HTTP_PASSWORD_RE.search(data)
+    # Only look in POST requests with form data
+    if not data.startswith(b'POST'):
+        return
+    
+    # Split headers and body
+    if b'\r\n\r\n' in data:
+        headers, body = data.split(b'\r\n\r\n', 1)
+    elif b'\n\n' in data:
+        headers, body = data.split(b'\n\n', 1)
+    else:
+        return
+    
+    # Only search in the body
+    http_user = HTTP_USERNAME_RE.search(body)
+    http_pass = HTTP_PASSWORD_RE.search(body)
     
     if http_user and http_pass:
-        user_match = re.findall(b'(%s=[^&\r\n]+)' % http_user.group(0), data, re.IGNORECASE)
-        pass_match = re.findall(b'(%s=[^&\r\n]+)' % http_pass.group(0), data, re.IGNORECASE)
+        user_match = re.findall(b'(%s=[^&\r\n]+)' % http_user.group(0), body, re.IGNORECASE)
+        pass_match = re.findall(b'(%s=[^&\r\n]+)' % http_pass.group(0), body, re.IGNORECASE)
         
         if user_match and pass_match:
             try:
