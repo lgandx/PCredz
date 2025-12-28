@@ -28,25 +28,43 @@ class TextWriter(OutputWriter):
         """Write data to text file (original WriteData function)"""
         filepath = os.path.join(self.output_dir, filename)
         
+        # Convert user to bytes for deduplication check
         if isinstance(user, str):
-            user = user.encode('latin-1')
+            try:
+                user_bytes = user.encode('utf-8')
+            except UnicodeEncodeError:
+                # Fallback to ASCII, ignoring errors
+                user_bytes = user.encode('ascii', errors='ignore')
+        else:
+            user_bytes = user
             
         if not os.path.isfile(filepath):
             if not os.path.isdir(os.path.dirname(filepath)):
                 os.makedirs(os.path.dirname(filepath))
-            with open(filepath, "w") as outf:
+            with open(filepath, "w", encoding='utf-8') as outf:
                 outf.write(data + '\n')
             return
             
         # Check for duplicates
-        with open(filepath, "r") as filestr:
-            import codecs
-            import re
-            if re.search(codecs.encode(user, 'hex'), 
-                        codecs.encode(filestr.read().encode('latin-1'), 'hex')):
-                return False
+        try:
+            with open(filepath, "r", encoding='utf-8') as filestr:
+                import codecs
+                import re
+                file_content = filestr.read()
+                # Try UTF-8 encoding for comparison
+                try:
+                    file_bytes = file_content.encode('utf-8')
+                except UnicodeEncodeError:
+                    file_bytes = file_content.encode('ascii', errors='ignore')
                 
-        with open(filepath, "a") as outf2:
+                if re.search(codecs.encode(user_bytes, 'hex'), 
+                            codecs.encode(file_bytes, 'hex')):
+                    return False
+        except Exception:
+            # If any error in duplicate check, just write anyway
+            pass
+                
+        with open(filepath, "a", encoding='utf-8') as outf2:
             outf2.write(data + '\n')
 
 

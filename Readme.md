@@ -39,7 +39,12 @@ $ docker run --net=host -v $(pwd):/opt/Pcredz -it pcredz
 On a debian based OS bash:
 
 ```bash
-apt install python3-pip && sudo apt install libpcap-dev && sudo apt install file && pip3 install Cython && pip3 install python-libpcap
+pip install pcapy-ng requests
+```
+
+Or with apt (Debian/Ubuntu/Kali):
+```
+sudo apt install python3-pip && pip3 install pcapy-ng requests
 ```
 
 ## Usage

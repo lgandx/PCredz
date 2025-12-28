@@ -30,8 +30,8 @@ setup(
     include_package_data=True,
     
     install_requires=[
-        'Cython',
-        'python-libpcap',
+        'pcapy-ng',
+        'requests',
     ],
     
     extras_require={

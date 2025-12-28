@@ -26,7 +26,7 @@ def send_webhook_alert(webhook_url: Optional[str], credential_dict: Dict, verbos
         
         # Build Slack-compatible payload
         payload = {
-            "text": f"🔐 Credential Captured: {credential_dict.get('username', 'N/A')}",
+            "text": f"[Alert] Credential Captured: {credential_dict.get('username', 'N/A')}",
             "attachments": [{
                 "color": color,
                 "fields": [

@@ -34,9 +34,7 @@ build-linux: clean
 	@echo "Building Linux standalone executable..."
 	pyinstaller --onefile --name pcredz \
 		--add-data "pcredz:pcredz" \
-		--hidden-import=pylibpcap \
-		--hidden-import=pylibpcap.pcap \
-		--collect-all=pylibpcap \
+		--hidden-import=pcapy \
 		--hidden-import=pcredz.parsers \
 		--hidden-import=pcredz.output \
 		--hidden-import=pcredz.utils \
@@ -55,7 +53,7 @@ build-windows:
 		wine $(PYTHON) -m PyInstaller --onefile \\
 			--name pcredz-$(VERSION)-windows.exe \\
 			--add-data "pcredz;pcredz" \\
-			--hidden-import=pylibpcap \\
+			--hidden-import=pcapy \\
 			--hidden-import=pcredz.parsers \\
 			--hidden-import=pcredz.output \\
 			--hidden-import=pcredz.utils \\

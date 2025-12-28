@@ -65,26 +65,28 @@ def parse_data_regex(decoded, src_port, dst_port, config):
     http_parsers.parse_api_keys(data, src_ip, dst_ip, config)
     
     # Port-specific protocol parsers
+    disabled = config.get('disabled_protocols', set())
+    
     # SSH (22)
-    if dst_port == 22 or src_port == 22:
+    if (dst_port == 22 or src_port == 22) and 'ssh' not in disabled:
         network_parsers.parse_ssh(data, src_ip, dst_ip, src_port, dst_port, config)
     
     # Telnet (23)
-    if dst_port == 23:
+    if dst_port == 23 and 'telnet' not in disabled:
         network_parsers.parse_telnet(data, src_ip, dst_ip, src_port, dst_port, config)
     
     # FTP (21)
-    if dst_port == 21:
+    if dst_port == 21 and 'ftp' not in disabled:
         network_parsers.parse_ftp(data, src_ip, dst_ip, config)
     
     # SMTP (25, 587)
-    if dst_port == 25 or dst_port == 587:
+    if (dst_port == 25 or dst_port == 587) and 'smtp' not in disabled:
         result = network_parsers.parse_smtp(data, config)
         if result and config['verbose']:
             print(f"{src_ip}:{src_port} > {dst_ip}:{dst_port}\n{result}")
     
     # Kerberos (88)
-    if dst_port == 88:
+    if dst_port == 88 and 'kerberos' not in disabled:
         if PROTOCOLS.get(decoded['protocol']) == 'tcp' and len(data[20:]) > 20:
             result = auth_parsers.parse_kerberos_tcp(data[20:], config)
             if result and config['verbose']:
@@ -107,31 +109,31 @@ def parse_data_regex(decoded, src_port, dst_port, config):
             print(f"{src_ip}:{src_port} > {dst_ip}:{dst_port}\n{result}")
     
     # SNMP (161)
-    if dst_port == 161:
+    if dst_port == 161 and 'snmp' not in disabled:
         result = auth_parsers.parse_snmp(data, config)  # data already has UDP header skipped
         if result and config['verbose']:
             print(f"protocol: udp {src_ip}:{src_port} > {dst_ip}:{dst_port}\n{result}")
     
     # MSSQL (1433)
-    if dst_port == 1433 and data[20:22] == b"\x10\x01":
+    if dst_port == 1433 and data[20:22] == b"\x10\x01" and 'mssql' not in disabled:
         result = database_parsers.parse_mssql_plaintext(data[20:], config)
         if result and config['verbose']:
             print(f"{src_ip}:{src_port} > {dst_ip}:{dst_port}\n{result}")
     
     # MySQL (3306)
-    if dst_port == 3306 or src_port == 3306:
+    if (dst_port == 3306 or src_port == 3306) and 'mysql' not in disabled:
         database_parsers.parse_mysql(data, src_ip, dst_ip, src_port, dst_port, config)
     
     # PostgreSQL (5432)
-    if dst_port == 5432 or src_port == 5432:
+    if (dst_port == 5432 or src_port == 5432) and 'postgresql' not in disabled:
         database_parsers.parse_postgresql(data, src_ip, dst_ip, src_port, dst_port, config)
     
     # Redis (6379)
-    if dst_port == 6379 or src_port == 6379:
+    if (dst_port == 6379 or src_port == 6379) and 'redis' not in disabled:
         database_parsers.parse_redis(data, src_ip, dst_ip, src_port, dst_port, config)
     
     # MongoDB (27017)
-    if dst_port == 27017 or src_port == 27017:
+    if (dst_port == 27017 or src_port == 27017) and 'mongodb' not in disabled:
         database_parsers.parse_mongodb(data, src_ip, dst_ip, src_port, dst_port, config)
 
 

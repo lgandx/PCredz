@@ -1,36 +1,40 @@
-# syntax=docker/dockerfile:1
-#FROM debian:bullseye-slim
-FROM python:3.9.23-slim-bullseye
+# Dockerfile for PCredz with pcapy-ng
+FROM python:3.11-slim
 
-# Install apt packages
-RUN apt update
-RUN apt install python3 \
-    python3-pip \
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    libpcap0.8 \
     libpcap-dev \
+    gcc \
     file \
-    nano \
-    iproute2 \
-    git \
-    bash \
-    bash-doc \
-    bash-completion -y
+    && rm -rf /var/lib/apt/lists/*
 
-# Create python symlink
-RUN ln -s /usr/bin/python3 /usr/bin/python
+# Set working directory
+WORKDIR /opt/pcredz
 
-# Install python things
-RUN python -m pip install Cython
-RUN python -m pip install python-libpcap
+# Copy application files
+COPY requirements.txt setup.py ./
+COPY pcredz/ ./pcredz/
+COPY run_pcredz.py ./
+COPY README.md ./
+COPY tests/ ./tests/
 
-# Change our shell to /bin/bash
-RUN sed -i '/root/s/ash/bash/g' /etc/passwd
-CMD ["/bin/bash"]
+# Install PCredz
+RUN pip install --no-cache-dir -e .
 
-# Make directory
-RUN mkdir /opt/Pcredz
+# Create logs directory
+RUN mkdir -p logs
 
-# Copy Pcredz files
-COPY Pcredz /opt/Pcredz/
-COPY logs /opt/Pcredz/logs
+# Set Python environment
+ENV PYTHONUNBUFFERED=1
 
-WORKDIR /opt/Pcredz/
+# Default working directory for PCAPs
+WORKDIR /pcaps
+
+# Entry point
+ENTRYPOINT ["python3", "-m", "pcredz"]
+CMD ["--help"]
+
+# Build: docker build -t pcredz .
+# Run:   docker run -v $(pwd):/pcaps pcredz -f /pcaps/capture.pcap -o /pcaps/logs/
+# Live:  docker run --net=host --cap-add=NET_RAW --cap-add=NET_ADMIN pcredz -i eth0

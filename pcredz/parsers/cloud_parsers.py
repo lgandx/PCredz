@@ -17,7 +17,7 @@ def parse_cloud_credentials(data, src_ip, dst_ip, config):
     aws_keys = AWS_KEY_RE.findall(data)
     for key in aws_keys:
         key_str = key.decode('latin-1')
-        message = f'🔐 Found AWS Access Key: {key_str}\n'
+        message = f'[+] Found AWS Access Key: {key_str}\n'
         
         if not is_credential_duplicate("aws", key_str, config['deduplicate']):
             config['text_writer'].write_to_file("logs/Cloud-Credentials.txt", message, key_str)
@@ -42,7 +42,7 @@ def parse_cloud_credentials(data, src_ip, dst_ip, config):
     github_tokens = GITHUB_TOKEN_RE.findall(data)
     for token in github_tokens:
         token_str = token.decode('latin-1')
-        message = f'🔐 Found GitHub Token: {token_str[:30]}...\n'
+        message = f'[+] Found GitHub Token: {token_str[:30]}...\n'
         
         if not is_credential_duplicate("github", token_str, config['deduplicate']):
             config['text_writer'].write_to_file("logs/Cloud-Credentials.txt", message, token_str)
@@ -71,7 +71,7 @@ def parse_cloud_credentials(data, src_ip, dst_ip, config):
             cred_type = azure_match.group(1).decode('latin-1')
             cred_value = azure_match.group(2).decode('latin-1')[:50] + "..."
             
-            message = f'🔐 Found Azure {cred_type}: {cred_value}\n'
+            message = f'[+] Found Azure {cred_type}: {cred_value}\n'
             
             if not is_credential_duplicate("azure", cred_value, config['deduplicate']):
                 config['text_writer'].write_to_file("logs/Cloud-Credentials.txt", message, cred_value)

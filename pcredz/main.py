@@ -16,13 +16,12 @@ from threading import Thread
 if sys.version_info < (3, 0):
     sys.exit("This version only supports python3.\\nTry python3 ./pcredz")
 
-# Try to import pylibpcap
+# Try to import pcapy-ng
 try:
-    import pylibpcap as pcap
-    from pylibpcap.pcap import rpcap, Sniff
+    import pcapy
 except ImportError:
-    print("libpcap not installed.")
-    print("Install with: apt install python3-pip && sudo apt-get install libpcap-dev && pip3 install Cython && pip3 install python-libpcap")
+    print("pcapy-ng not installed.")
+    print("Install with: pip3 install pcapy-ng")
     sys.exit(1)
 
 # Import our modules
@@ -82,6 +81,8 @@ def parse_arguments():
                        help="Disable credential deduplication")
     parser.add_argument('--webhook', type=str, dest="webhook_url",
                        help="Webhook URL for alerts (Slack/Discord/Teams)")
+    parser.add_argument('--disable', type=str, dest="disabled_protocols",
+                       help="Comma-separated list of protocols to disable (e.g., snmp,smtp,ftp)")
     
     options = parser.parse_args()
     
@@ -133,13 +134,17 @@ def decode_file(fname, res, config):
     if config['interface'] is not None:
         # Live capture
         try:
-            message = f"Pcredz live capture started, using: {config['interface']}\\nStarting timestamp ({time.time()}) corresponds to {time.strftime('%x %X')}"
+            message = f"Pcredz live capture started, using: {config['interface']}\nStarting timestamp ({time.time()}) corresponds to {time.strftime('%x %X')}"
             print(message)
             config['logger'].warning(message)
             
-            p = Sniff(config['interface'], count=-1, promisc=1)
-            for plen, t, buf in p.capture():
-                packet_handler.print_packet_tcpdump(plen, t, buf, config)
+            # Open live capture with pcapy-ng
+            reader = pcapy.open_live(config['interface'], 65535, 1, 100)
+            while True:
+                hdr, pkt = reader.next()
+                if hdr is None:
+                    continue
+                packet_handler.print_packet_tcpdump(hdr.getlen(), hdr.getts(), pkt, config)
                 
         except (KeyboardInterrupt, SystemExit):
             print("\\n\\nCTRL-C hit..Cleaning up...")
@@ -147,8 +152,8 @@ def decode_file(fname, res, config):
     else:
         # PCAP file
         try:
-            p = rpcap(fname)
-            config['logger'].warning(f'\\n\\nPcredz started, using:{fname} file')
+            reader = pcapy.open_offline(fname)
+            config['logger'].warning(f'\n\nPcredz started, using:{fname} file')
             version = is_cooked_pcap(res)
             
             # Select appropriate packet handler based on format
@@ -160,7 +165,7 @@ def decode_file(fname, res, config):
                 handler_func = packet_handler.print_packet_tcpdump
             
             # Process packets
-            thread = Thread(target=loop_packets, args=(p, handler_func, config))
+            thread = Thread(target=loop_packets, args=(reader, handler_func, config))
             thread.daemon = True
             thread.start()
             
@@ -168,7 +173,7 @@ def decode_file(fname, res, config):
                 while thread.is_alive():
                     thread.join(timeout=1)
             except (KeyboardInterrupt, SystemExit):
-                print("\\n\\nCTRL-C hit..Cleaning up...")
+                print("\n\nCTRL-C hit..Cleaning up...")
                 threading.Event().set()
                 
         except Exception as e:
@@ -176,10 +181,13 @@ def decode_file(fname, res, config):
             sys.exit(1)
 
 
-def loop_packets(pcap_object, func, config):
+def loop_packets(reader, func, config):
     """Loop through packets and process them"""
-    for x in pcap_object:
-        func(x[0], x[1], x[2], config)
+    while True:
+        hdr, pkt = reader.next()
+        if hdr is None:
+            break
+        func(hdr.getlen(), hdr.getts(), pkt, config)
 
 
 def run(config):
@@ -300,6 +308,7 @@ def main():
         'text_writer': text_writer,
         'json_writer': json_writer,
         'csv_writer': csv_writer,
+        'disabled_protocols': set(options.disabled_protocols.split(',')) if options.disabled_protocols else set(),
     }
     
     # Register cleanup

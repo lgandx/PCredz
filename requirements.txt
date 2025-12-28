@@ -1,3 +1,2 @@
-Cython
-python-libpcap
+pcapy-ng
 requests
