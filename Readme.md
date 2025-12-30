@@ -107,6 +107,9 @@ Optional:
   -t              Print timestamps
   -o DIR          Output directory for logs (default: ./)
   -c              Disable credit card scanning
+  --disable PROTO Disable protocol (can be used multiple times)
+                  Options: NTLM, HTTP, FTP, IRC, LDAP, SMTP, Kerberos, SNMP, MSSQL
+  --exclude-host IP  Exclude host IP from capture (can be used multiple times)
   -h              Show help message
 ```
 
@@ -167,6 +170,33 @@ sudo ./Pcredz -i eth0 -v
 # Parsing /forensics/network-captures/day1/morning.pcap...
 # Parsing /forensics/network-captures/day1/afternoon.pcap...
 # ...
+```
+
+### Protocol Filtering
+
+```bash
+# Disable specific protocols (reduce noise)
+./Pcredz -f capture.pcap --disable HTTP --disable SNMP
+
+# Only capture NTLM hashes
+./Pcredz -f capture.pcap --disable HTTP --disable FTP --disable IRC \
+  --disable LDAP --disable SMTP --disable Kerberos --disable SNMP --disable MSSQL
+
+# Focus on cleartext credentials only
+./Pcredz -f capture.pcap --disable NTLM --disable Kerberos
+```
+
+### Host Exclusion
+
+```bash
+# Exclude your own IP during live capture (common use case)
+sudo ./Pcredz -i eth0 --exclude-host 192.168.1.50 -v
+
+# Exclude multiple hosts
+./Pcredz -f capture.pcap --exclude-host 192.168.1.100 --exclude-host 10.0.0.5
+
+# Pentesting: capture target credentials, not your own
+sudo ./Pcredz -i eth0 --exclude-host $(hostname -I | awk '{print $1}') -v
 ```
 
 ## Performance
@@ -230,4 +260,3 @@ GNU General Public License v3.0
 - Email: lgaffie@secorizon.com
 - X/Twitter: [@secorizon](https://x.com/secorizon)
 - GitHub: [lgandx/PCredz](https://github.com/lgandx/)
-

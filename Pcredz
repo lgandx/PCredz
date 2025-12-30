@@ -41,6 +41,8 @@ ftp_users = {}
 seen_credentials = set()
 logged_messages = set()
 detected_offset = None
+disabled_protocols = set()  # Protocols to skip
+excluded_hosts = set()  # IPs to exclude from capture
 
 # Pre-compiled regex patterns
 REGEX_HTTP_BASIC = re.compile(rb'Authorization: Basic ([A-Za-z0-9+/=]+)', re.IGNORECASE)
@@ -98,8 +100,15 @@ def get_flow_key(src, sport, dst, dport):
     """Generate consistent flow identifier"""
     return (src, sport, dst, dport) if sport > dport else (dst, dport, src, sport)
 
+def is_protocol_disabled(protocol):
+    """Check if a protocol is disabled"""
+    return protocol.upper() in disabled_protocols
+
 def extract_ntlm(payload, src, sport, dst, dport):
     """Extract NTLM authentication (Type 2 Challenge, Type 3 Response)"""
+    if is_protocol_disabled('NTLM'):
+        return
+        
     flow = get_flow_key(src, sport, dst, dport)
     reverse_flow = get_flow_key(dst, dport, src, sport)
     pos = 0
@@ -160,6 +169,9 @@ def extract_ntlm(payload, src, sport, dst, dport):
 
 def extract_ntlm_from_http(payload, src, sport, dst, dport):
     """Extract NTLM from HTTP headers"""
+    if is_protocol_disabled('NTLM'):
+        return
+        
     # Challenge
     challenge_match = REGEX_NTLM_CHALLENGE.search(payload)
     if challenge_match:
@@ -186,6 +198,9 @@ def extract_ntlm_from_http(payload, src, sport, dst, dport):
 
 def extract_http_basic(payload, src, sport, dst, dport):
     """Extract HTTP Basic authentication"""
+    if is_protocol_disabled('HTTP'):
+        return
+        
     basic_match = REGEX_HTTP_BASIC.search(payload)
     if basic_match:
         try:
@@ -202,6 +217,9 @@ def extract_http_basic(payload, src, sport, dst, dport):
 
 def extract_http_password_fields(payload, src, sport, dst, dport):
     """Extract password-like fields from HTTP requests"""
+    if is_protocol_disabled('HTTP'):
+        return
+        
     if dport in {443, 8443} or sport in {443, 8443}:
         return
         
@@ -241,6 +259,9 @@ def extract_http_password_fields(payload, src, sport, dst, dport):
 
 def extract_smtp_auth(payload, src, sport, dst, dport):
     """Extract SMTP authentication"""
+    if is_protocol_disabled('SMTP'):
+        return
+        
     if dport not in {25, 587, 465} and sport not in {25, 587, 465}:
         return
         
@@ -287,6 +308,9 @@ def extract_smtp_auth(payload, src, sport, dst, dport):
 
 def extract_ldap_simple_bind(payload, src, sport, dst, dport):
     """Extract LDAP Simple Bind credentials"""
+    if is_protocol_disabled('LDAP'):
+        return
+        
     if dport not in {389, 636} and sport not in {389, 636}:
         return
         
@@ -356,6 +380,9 @@ def extract_ldap_simple_bind(payload, src, sport, dst, dport):
 
 def extract_kerberos(payload, src, sport, dst, dport):
     """Extract Kerberos AS-REQ Pre-Auth (etype 23)"""
+    if is_protocol_disabled('KERBEROS'):
+        return
+        
     if len(payload) < 50:
         return
         
@@ -418,7 +445,7 @@ def extract_cleartext(payload, src, sport, dst, dport):
     for line in lines:
         line = line.strip()
         
-        if is_irc:
+        if is_irc and not is_protocol_disabled('IRC'):
             # IRC protocol
             if line.upper().startswith(b'NICK '):
                 nick = line[5:].decode('utf-8', errors='ignore').strip()
@@ -441,7 +468,7 @@ def extract_cleartext(payload, src, sport, dst, dport):
                     del ftp_users[flow_key]
                 else:
                     print_and_log(src, sport, dst, dport, msg, credential_key=f'IRC:pass:{pwd}')
-        else:
+        elif not is_protocol_disabled('FTP'):
             # FTP protocol
             if line.upper().startswith(b'USER '):
                 user = line[5:].decode('utf-8', errors='ignore').strip()
@@ -461,7 +488,7 @@ def extract_cleartext(payload, src, sport, dst, dport):
                     print_and_log(src, sport, dst, dport, msg, credential_key=f'FTP:pass:{pwd}')
     
     # SNMP
-    if dport in {161, 162} or sport in {161, 162}:
+    if not is_protocol_disabled('SNMP') and (dport in {161, 162} or sport in {161, 162}):
         if len(payload) > 20 and payload[0:1] == b'\x30':
             try:
                 if payload[4:6] == b'\x02\x01' and payload[6] in {0, 1}:
@@ -478,7 +505,7 @@ def extract_cleartext(payload, src, sport, dst, dport):
                 pass
     
     # MSSQL
-    if dport == 1433 or sport == 1433:
+    if not is_protocol_disabled('MSSQL') and (dport == 1433 or sport == 1433):
         mssql_msg = parse_mssql_plaintext(payload)
         if mssql_msg:
             print_and_log(src, sport, dst, dport, mssql_msg)
@@ -557,6 +584,10 @@ def process_packet(packet):
         proto = search_payload[9]
         src = '.'.join(str(b) for b in search_payload[12:16])
         dst = '.'.join(str(b) for b in search_payload[16:20])
+        
+        # Skip packets from/to excluded hosts
+        if src in excluded_hosts or dst in excluded_hosts:
+            return
         
         if proto == 6:  # TCP
             tcp_offset = ip_hlen
@@ -655,7 +686,21 @@ if __name__ == '__main__':
     parser.add_argument('-t', action='store_true', dest='timestamp', help='Print timestamps')
     parser.add_argument('-v', action='store_true', dest='verbose', help='Verbose mode (print duplicates)')
     parser.add_argument('-o', dest='output_path', default='./', help='Output directory for logs')
+    parser.add_argument('--disable', dest='disable_protocols', action='append', 
+                        help='Disable protocol (can be used multiple times). Options: NTLM, HTTP, FTP, IRC, LDAP, SMTP, Kerberos, SNMP, MSSQL')
+    parser.add_argument('--exclude-host', dest='exclude_hosts', action='append',
+                        help='Exclude host IP from capture (can be used multiple times)')
     args = parser.parse_args()
+    
+    # Process disabled protocols
+    if args.disable_protocols:
+        disabled_protocols.update(p.upper() for p in args.disable_protocols)
+        print(f"Disabled protocols: {', '.join(sorted(disabled_protocols))}\n")
+    
+    # Process excluded hosts
+    if args.exclude_hosts:
+        excluded_hosts.update(args.exclude_hosts)
+        print(f"Excluded hosts: {', '.join(sorted(excluded_hosts))}\n")
 
     output_path = args.output_path.rstrip('/')
     os.makedirs(os.path.join(output_path, 'logs'), exist_ok=True)
