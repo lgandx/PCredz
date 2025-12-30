@@ -1,36 +1,30 @@
 # syntax=docker/dockerfile:1
-#FROM debian:bullseye-slim
-FROM python:3.9.23-slim-bullseye
+FROM python:3.11-slim-bookworm
 
-# Install apt packages
-RUN apt update
-RUN apt install python3 \
-    python3-pip \
+LABEL maintainer="Laurent Gaffie <lgaffie@secorizon.com>"
+LABEL description="PCredz - Network credential extraction tool"
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
     libpcap-dev \
-    file \
-    nano \
-    iproute2 \
     git \
-    bash \
-    bash-doc \
-    bash-completion -y
+    && rm -rf /var/lib/apt/lists/*
 
-# Create python symlink
-RUN ln -s /usr/bin/python3 /usr/bin/python
+# Install Python dependencies
+RUN pip3 install --no-cache-dir pcapy-ng
 
-# Install python things
-RUN python -m pip install Cython
-RUN python -m pip install python-libpcap
+# Create working directory
+WORKDIR /opt/Pcredz
 
-# Change our shell to /bin/bash
-RUN sed -i '/root/s/ash/bash/g' /etc/passwd
-CMD ["/bin/bash"]
+# Copy Pcredz
+COPY Pcredz /opt/Pcredz/Pcredz
 
-# Make directory
-RUN mkdir /opt/Pcredz
+# Create logs directory
+RUN mkdir -p /opt/Pcredz/logs
 
-# Copy Pcredz files
-COPY Pcredz /opt/Pcredz/
-COPY logs /opt/Pcredz/logs
+# Make Pcredz executable
+RUN chmod +x /opt/Pcredz/Pcredz
 
-WORKDIR /opt/Pcredz/
+# Set entrypoint
+ENTRYPOINT ["/opt/Pcredz/Pcredz"]
+CMD ["--help"]
