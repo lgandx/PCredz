@@ -491,15 +491,18 @@ def extract_cleartext(payload, src, sport, dst, dport):
     if not is_protocol_disabled('SNMP') and (dport in {161, 162} or sport in {161, 162}):
         if len(payload) > 20 and payload[0:1] == b'\x30':
             try:
-                if payload[4:6] == b'\x02\x01' and payload[6] in {0, 1}:
-                    comm_idx = payload.find(b'\x04', 7)
+                snmpv1 = payload[4:6] == b'\x02\x01' and payload[6] in {0, 1}
+                snmpv2c = payload[2:4] == b'\x02\x01' and payload[4] in {0, 1}
+                if (snmpv1) or (snmpv2c):
+                    comm_idx = payload.find(b'\x04', 7) if snmpv1 else payload.find(b'\x04', 5)
                     if comm_idx != -1:
                         comm_len = payload[comm_idx + 1]
                         if 0 < comm_len < 50:
                             comm = payload[comm_idx + 2:comm_idx + 2 + comm_len].decode('utf-8', errors='ignore')
                             if comm.isprintable() and not comm.isspace():
-                                msg = f'Found SNMPv1 Community string: {comm}'
-                                write_data('SNMPv1.txt', comm, comm)
+                                version = "SNMPv1" if snmpv1 else "SNMPv2c"
+                                msg = f'Found {version} Community string: {comm}'
+                                write_data(f'{version}.txt', comm, comm)
                                 print_and_log(src, sport, dst, dport, msg, credential_key=f'SNMP:{comm}')
             except (IndexError, UnicodeDecodeError):
                 pass
