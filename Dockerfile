@@ -7,6 +7,8 @@ LABEL description="PCredz - Network credential extraction tool"
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     libpcap-dev \
+    gcc \
+    g++ \
     git \
     && rm -rf /var/lib/apt/lists/*
 
