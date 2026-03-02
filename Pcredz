@@ -667,7 +667,10 @@ def run():
     if args.interface:
         print(f'Live capture on {args.interface}\n')
         reader = pcapy.open_live(args.interface, 65536, True, 100)
-        reader.loop(-1, lambda hdr, data: process_packet(data))
+        while True:
+            header, packet = reader.next()
+            if header:
+                process_packet(packet)
         
     elif args.fname:
         process_pcap(args.fname)
